@@ -505,7 +505,7 @@ local wd__liangce_trigger = fk.CreateTriggerSkill{
   priority = 10.1, -- 快于五谷！
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if data.card.name == "amazing_grace" and data.extra_data and data.extra_data.AGFilled then
+    if player:hasSkill(self.name) and data.card.name == "amazing_grace" and data.extra_data and data.extra_data.AGFilled then
       return #table.filter(data.extra_data.AGFilled, function(id) return player.room:getCardArea(id) == Card.Processing end) > 0
     end
   end,

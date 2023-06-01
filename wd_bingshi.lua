@@ -84,7 +84,7 @@ local wd__xikou = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       for _, move in ipairs(data) do
-        return move.from == player.id or move.proposer == player.id
+        return move.from == player.id or move.proposer == player.id or move.proposer == player
       end
     end
   end,
@@ -93,16 +93,19 @@ local wd__xikou = fk.CreateTriggerSkill{
       if move.from == player.id then
         for _, info in ipairs(move.moveInfo) do
           if info.fromArea == Card.PlayerHand then
-            if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and move.proposer ~= player.id then
+            if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and
+              (move.proposer ~= player and move.proposer ~= player.id) then
               player.room:notifySkillInvoked(player, self.name, "defensive")
+              return true
             end
           end
         end
       else
         for _, info in ipairs(move.moveInfo) do
           if info.fromArea == Card.PlayerHand then
-            if move.moveReason == fk.ReasonPrey and move.proposer == player.id then
+            if move.moveReason == fk.ReasonPrey and (move.proposer == player.id or move.proposer == player) then
               player.room:notifySkillInvoked(player, self.name, "negative")
+              return true
             end
           end
         end
