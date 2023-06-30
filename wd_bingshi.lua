@@ -15,7 +15,8 @@ local wd__chenyong = fk.CreateViewAsSkill{
   end,
   view_as = function(self, cards)
     local name = "jink"
-    if Fk.currentResponsePattern == nil and Fk:cloneCard("slash").skill:canUse(Self) then
+    local slash  = Fk:cloneCard("slash")
+    if Fk.currentResponsePattern == nil and slash.skill:canUse(Self, slash) and not Self:prohibitUse(slash) then
       name = "slash"
     else
       for _, n in ipairs({"slash", "jink"}) do
@@ -33,7 +34,8 @@ local wd__chenyong = fk.CreateViewAsSkill{
     return not player:isKongcheng() and #table.filter(Fk:currentRoom().alive_players, function(p) return not p:isKongcheng() end) > 1
   end,
   enabled_at_response = function(self, player, response)
-    return not (response or player:isKongcheng() or #table.filter(Fk:currentRoom().alive_players, function(p) return not p:isKongcheng() end) < 2)
+    return not response and not player:isKongcheng() and
+      #table.filter(Fk:currentRoom().alive_players, function(p) return not p:isKongcheng() end) > 1
   end,
 }
 local wd__chenyong_trigger = fk.CreateTriggerSkill{
@@ -42,15 +44,14 @@ local wd__chenyong_trigger = fk.CreateTriggerSkill{
   mute = true,
   priority = 10,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and table.contains(data.card.skillNames, "wd__chenyong")
+    return target == player and table.contains(data.card.skillNames, "wd__chenyong")
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    room:doIndicate(player.id, TargetGroup:getRealTargets(data.tos))
     return true
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:doIndicate(player.id, TargetGroup:getRealTargets(data.tos))
     local targets = table.map(table.filter(room:getOtherPlayers(player), function(p) return not p:isKongcheng() end), function(p) return p.id end)
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#wd__chenyong-choose:::"..data.card.name, self.name, true)
     if #to > 0 then
@@ -161,7 +162,8 @@ local wd__wanlan = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.AfterCardUseDeclared, fk.CardResponding},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.color == Card.Red and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return target == player and player:hasSkill(self.name) and data.card.color == Card.Red and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(table.filter(player.room:getAlivePlayers(), function(p)
@@ -180,7 +182,8 @@ local wd__wanlan2 = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.AfterCardUseDeclared, fk.CardResponding},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.color == Card.Black and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return target == player and player:hasSkill(self.name) and data.card.color == Card.Black and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local targets = table.map(table.filter(player.room:getOtherPlayers(player), function(p)
@@ -204,7 +207,8 @@ jiakui:addSkill(wd__wanlan)
 Fk:loadTranslationTable{
   ["wd__jiakui"] = "贾逵",
   ["wd__wanlan"] = "挽澜",
-  [":wd__wanlan"] = "每回合各限一次，当你使用或打出红色牌时，你可以令一名体力值不大于你的角色摸一张牌；当你使用或打出黑色牌时，你可以弃置一名体力值大于你的角色的一张牌。",
+  [":wd__wanlan"] = "每回合各限一次，当你使用或打出红色牌时，你可以令一名体力值不大于你的角色摸一张牌；"..
+  "当你使用或打出黑色牌时，你可以弃置一名体力值大于你的角色的一张牌。",
   ["#wd__wanlan"] = "挽澜",
   ["#wd__wanlan1-choose"] = "挽澜：你可以令一名体力值不大于你的角色摸一张牌",
   ["#wd__wanlan2-choose"] = "挽澜：你可以弃置一名体力值大于你的角色的一张牌",
@@ -254,18 +258,18 @@ local wd__fuman_trigger = fk.CreateTriggerSkill{
     if event == fk.GameStart or event == fk.EventAcquireSkill then
       if player:hasSkill(self.name, true) then
         for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "&wd__fuman", nil, false, true)
+          room:handleAddLoseSkills(p, "wd__fuman&", nil, false, true)
         end
       end
     elseif event == fk.EventLoseSkill or event == fk.Deathed then
       for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-&wd__fuman", nil, false, true)
+        room:handleAddLoseSkills(p, "-wd__fuman&", nil, false, true)
       end
     end
   end,
 }
 local wd__fuman_active = fk.CreateActiveSkill{
-  name = "&wd__fuman",
+  name = "wd__fuman&",
   anim_type = "support",
   card_num = 1,
   target_num = 1,
@@ -293,8 +297,8 @@ Fk:loadTranslationTable{
   ["wd__fuman"] = "抚蛮",
   [":wd__fuman"] = "出牌阶段限一次，你可以将【杀】交给其他角色。其他角色的出牌阶段限一次，其可以将一张【杀】交给你，摸一张牌。",
   ["#wd__fuman-invoke"] = "抚蛮：你可以将【杀】交给其他角色",
-  ["&wd__fuman"] = "抚蛮",
-  [":&wd__fuman"] = "出牌阶段限一次，你可以将一张【杀】交给马忠，摸一张牌。",
+  ["wd__fuman&"] = "抚蛮",
+  [":wd__fuman&"] = "出牌阶段限一次，你可以将一张【杀】交给马忠，摸一张牌。",
 }
 
 Fk:loadTranslationTable{
@@ -302,7 +306,8 @@ Fk:loadTranslationTable{
   ["wd__jujiao"] = "踞交",
   [":wd__jujiao"] = "锁定技，若你的手牌数小于体力值，你于回合外不计入距离和座次计算。 ",
   ["wd__shuaifu"] = "率附",
-  [":wd__shuaifu"] = "锁定技，准备阶段开始时，你摸一张牌，然后若你的手牌数大于体力值，你选择一项：1.弃置多余的手牌并回复1点体力；2.将多余的手牌交给一名其他角色。",
+  [":wd__shuaifu"] = "锁定技，准备阶段开始时，你摸一张牌，然后若你的手牌数大于体力值，你选择一项：1.弃置多余的手牌并回复1点体力；"..
+  "2.将多余的手牌交给一名其他角色。",
 }
 
 local sunli = General(extension, "wd__sunli", "wei", 4)
@@ -444,7 +449,8 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["wd__xiahoushang"] = "夏侯尚",
   ["wd__anxi"] = "暗袭",
-  [":wd__anxi"] = "出牌阶段限一次，你可以将一张装备牌置入一名其他角色的装备区（可以替换原装备），令该角色选择一项：1.弃置装备区内所有牌；2.你对其造成X点火焰伤害（X为你至其的距离）。",
+  [":wd__anxi"] = "出牌阶段限一次，你可以将一张装备牌置入一名其他角色的装备区（可以替换原装备），令该角色选择一项：1.弃置装备区内所有牌；"..
+  "2.你对其造成X点火焰伤害（X为你至其的距离）。",
   ["wd__shengsha"] = "生杀",
   [":wd__shengsha"] = "限定技，出牌阶段，你可以转置一名角色装备区内任意张牌。",
 }
@@ -452,7 +458,8 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["wd__yanghong"] = "杨弘",
   ["wd__dinglve"] = "定略",
-  [":wd__dinglve"] = "当你或你攻击范围内的一名角色成为【杀】的目标时，你可以将一张手牌交给此【杀】的使用者并选择是此【杀】合法目标的另一名角色，将此【杀】转移给该角色。",
+  [":wd__dinglve"] = "当你或你攻击范围内的一名角色成为【杀】的目标时，你可以将一张手牌交给此【杀】的使用者并选择是此【杀】合法目标的另一名角色，"..
+  "将此【杀】转移给该角色。",
   ["wd__bifeng"] = "避锋",
   [":wd__bifeng"] = "当你成为【杀】或【决斗】的目标时，若使用者的手牌多于你，你可以摸一张牌。",
 }
@@ -473,7 +480,8 @@ Fk:loadTranslationTable{
   ["wd__anxiao"] = "安骁",
   [":wd__anxiao"] = "锁定技，你不是至你距离为1的其他角色于其回合内使用的第一张牌的合法目标。",
   ["wd__suqi"] = "肃齐",
-  [":wd__suqi"] = "结束阶段，你可以选择至少两名手牌数相等的其他角色，观看牌堆顶的X张牌（X为这些角色的数量），然后将这些牌任意交给你和这些角色，每名角色至多两张。 ",
+  [":wd__suqi"] = "结束阶段，你可以选择至少两名手牌数相等的其他角色，观看牌堆顶的X张牌（X为这些角色的数量），然后将这些牌任意交给你和这些角色，"..
+  "每名角色至多两张。 ",
 }
 
 Fk:loadTranslationTable{
@@ -481,7 +489,8 @@ Fk:loadTranslationTable{
   ["wd__qianzhi"] = "遣质",
   [":wd__qianzhi"] = "出牌阶段限一次，你可以将一张♠牌当【笑里藏刀】使用。",
   ["wd__wenjue"] = "问决",
-  [":wd__wenjue"] = "锁定技，每回合各限一次，当你造成或受到伤害时，你需令一名其他角色判定，若结果为：黑色，你摸一张牌；红色，你防止此伤害，然后获得造成伤害的牌。",
+  [":wd__wenjue"] = "锁定技，每回合各限一次，当你造成或受到伤害时，你需令一名其他角色判定，若结果为：黑色，你摸一张牌；"..
+  "红色，你防止此伤害，然后获得造成伤害的牌。",
 }
 
 return extension
