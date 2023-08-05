@@ -10,23 +10,25 @@ local wd__chenyong = fk.CreateViewAsSkill{
   name = "wd__chenyong",
   anim_type = "control",
   pattern = "slash,jink",
+  prompt = "#wd__chenyong",
+  interaction = function()
+    local names = {"slash", "jink"}
+    for _, name in ipairs(names) do
+      local card = Fk:cloneCard(name)
+      if ((Fk.currentResponsePattern == nil and card.skill:canUse(Self, card) and not Self:prohibitUse(card)) or
+        (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    if #names == 0 then return false end
+    return UI.ComboBox { choices = names }
+  end,
   card_filter = function(self, to_select, selected)
     return false
   end,
   view_as = function(self, cards)
-    local name = "jink"
-    local slash  = Fk:cloneCard("slash")
-    if Fk.currentResponsePattern == nil and slash.skill:canUse(Self, slash) and not Self:prohibitUse(slash) then
-      name = "slash"
-    else
-      for _, n in ipairs({"slash", "jink"}) do
-        if Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(n)) then
-          name = n
-          break
-        end
-      end
-    end
-    local card = Fk:cloneCard(name)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     return card
   end,
@@ -62,9 +64,8 @@ local wd__chenyong_trigger = fk.CreateTriggerSkill{
     local pindian = player:pindian({to}, "wd__chenyong")
     if pindian.results[to.id].winner == player then
       return false
-    else
-      return true
     end
+    return true
   end,
 }
 wd__chenyong:addRelatedSkill(wd__chenyong_trigger)
@@ -73,6 +74,7 @@ Fk:loadTranslationTable{
   ["wd__chentai"] = "陈泰",
   ["wd__chenyong"] = "沉勇",
   [":wd__chenyong"] = "当你需使用【杀】或【闪】时，你可以拼点，若你赢，视为你使用之。",
+  ["#wd__chenyong"] = "沉勇：声明你需使用或打出的牌名并指定目标，然后选择角色拼点",
   ["#wd__chenyong-choose"] = "沉勇：选择一名角色与其拼点，若你赢，视为你使用【%arg】",
 }
 
@@ -119,15 +121,22 @@ local wd__suli = fk.CreateActiveSkill{
   anim_type = "control",
   card_num = 0,
   target_num = 0,
+  prompt = function(self)
+    if Self:getHandcardNum() > Self.hp then
+      return "#wd__suli-draw"
+    else
+      return "#wd__suli-discard"
+    end
+  end,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and #player.player_cards[Player.Hand] ~= player.hp
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and player:getHandcardNum() ~= player.hp
   end,
   card_filter = function(self, to_select, selected)
     return false
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local n = #player.player_cards[Player.Hand] - player.hp
+    local n = player:getHandcardNum() - player.hp
     if n > 0 then
       room:askForDiscard(player, n, n, false, self.name, false)
       local targets = table.map(table.filter(room:getOtherPlayers(player), function(p) return not p:isNude() end), function(p) return p.id end)
@@ -136,8 +145,10 @@ local wd__suli = fk.CreateActiveSkill{
       if #tos > 0 then
         for _, id in ipairs(tos) do
           local p = room:getPlayerById(id)
-          local c = player.room:askForCardChosen(player, p, "he", self.name)
-          room:throwCard({c}, self.name, p, player)
+          if not player.dead and not to.dead and not p:isNude() then
+            local c = room:askForCardChosen(player, p, "he", self.name)
+            room:throwCard({c}, self.name, p, player)
+          end
         end
       end
     else
@@ -153,6 +164,8 @@ Fk:loadTranslationTable{
   [":wd__xikou"] = "锁定技，其他角色不能弃置或获得你的手牌，你不能获得其他角色的手牌。",
   ["wd__suli"] = "肃吏",
   [":wd__suli"] = "出牌阶段限一次，你可以将手牌摸或弃至体力值；若为弃置，你可以弃置至多你弃牌张数的其他角色各一张牌。",
+  ["#wd__suli-draw"] = "肃吏：你可以将手牌摸至体力值",
+  ["#wd__suli-discard"] = "肃吏：你可以将手牌弃至体力值，然后弃置至多弃牌数的其他角色各一张牌",
   ["#wd__suli-choose"] = "肃吏：你可以弃置至多%arg名角色各一张牌",
 }
 
@@ -475,13 +488,148 @@ Fk:loadTranslationTable{
   [":wd__qiwei"] = "锁定技，有“信”的角色手牌上限-1；其回合结束时，你可以弃置两张牌，对其造成1点伤害并将“信”置于其下家的武将牌旁。",
 }
 
+local zhangji = General(extension, "wd__zhangjiw", "wei", 3)
+local wd__anxiao = fk.CreateProhibitSkill{
+  name = "wd__anxiao",
+  frequency = Skill.Compulsory,
+  is_prohibited = function(self, from, to, card)
+    if to:hasSkill(self.name) then
+      return from.phase ~= Player.NotActive and from:getMark("wd__anxiao-turn") == 0
+    end
+  end,
+}
+local wd__anxiao_record = fk.CreateTriggerSkill{
+  name = "#wd__anxiao_record",
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player.phase ~= Player.NotActive
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "wd__anxiao-turn", 1)
+  end,
+}
+local wd__suqi = fk.CreateTriggerSkill{
+  name = "wd__suqi",
+  anim_type = "support",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Finish and #player.room.alive_players > 2 then
+      local nums = {}
+      for _, p in ipairs(player.room:getOtherPlayers(player)) do
+        table.insertIfNeed(nums, p:getHandcardNum())
+      end
+      return #nums < #player.room.alive_players - 1
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local success, dat = player.room:askForUseActiveSkill(player, "wd__suqi_choose", "#wd__suqi-invoke", true)
+    if success then
+      self.cost_data = dat.targets
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, self.cost_data)
+    local targets = table.map(self.cost_data, function(id) return room:getPlayerById(id) end)
+    table.insert(targets, player)
+    for _, p in ipairs(targets) do
+      room:setPlayerMark(p, "wd__suqi_target-phase", 1)
+    end
+    local ids = room:getNCards(#self.cost_data)
+    local fakemove = {
+      toArea = Card.PlayerHand,
+      to = player.id,
+      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
+      moveReason = fk.ReasonJustMove,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    for _, id in ipairs(ids) do
+      room:setCardMark(Fk:getCardById(id), "wd__suqi", 1)
+    end
+    while table.find(ids, function(id) return Fk:getCardById(id):getMark("wd__suqi") > 0 end) do
+      room:askForUseActiveSkill(player, "wd__suqi_active", "#wd__suqi-give", false)
+    end
+    for _, p in ipairs(targets) do
+      room:setPlayerMark(p, "wd__suqi_target-phase", 0)
+      room:setPlayerMark(p, "wd__suqi_num-phase", 0)
+    end
+  end,
+}
+local wd__suqi_choose = fk.CreateActiveSkill{
+  name = "wd__suqi_choose",
+  mute = true,
+  min_target_num = 2,
+  card_num = 0,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    if to_select == Self.id then return false end
+    if #selected == 0 then
+      return true
+    else
+      local target1 = Fk:currentRoom():getPlayerById(to_select)
+      local target2 = Fk:currentRoom():getPlayerById(selected[1])
+      return target1:getHandcardNum() == target2:getHandcardNum()
+    end
+  end,
+}
+local wd__suqi_active = fk.CreateActiveSkill{
+  name = "wd__suqi_active",
+  mute = true,
+  min_card_num = 1,
+  max_card_num = 2,
+  target_num = 1,
+  card_filter = function(self, to_select, selected, targets)
+    return Fk:getCardById(to_select):getMark("wd__suqi") > 0 and #selected < 2
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    return #selected == 0 and target:getMark("wd__suqi_target-phase") > 0 and target:getMark("wd__suqi_num-phase") <= 2 - #selected_cards
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:doIndicate(player.id, {target.id})
+    for _, id in ipairs(effect.cards) do
+      room:setCardMark(Fk:getCardById(id), "wd__suqi", 0)
+    end
+    room:addPlayerMark(target, "wd__suqi_num-phase", #effect.cards)
+    local fakemove = {
+      from = player.id,
+      toArea = Card.Void,
+      moveInfo = table.map(effect.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+      moveReason = fk.ReasonGive,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    room:moveCards({
+      fromArea = Card.Void,
+      ids = effect.cards,
+      to = target.id,
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonGive,
+      skillName = self.name,
+    })
+  end,
+}
+Fk:addSkill(wd__suqi_choose)
+Fk:addSkill(wd__suqi_active)
+wd__anxiao:addRelatedSkill(wd__anxiao_record)
+zhangji:addSkill(wd__anxiao)
+zhangji:addSkill(wd__suqi)
 Fk:loadTranslationTable{
-  ["wd__zhangji"] = "张既",
+  ["wd__zhangjiw"] = "张既",
   ["wd__anxiao"] = "安骁",
   [":wd__anxiao"] = "锁定技，你不是至你距离为1的其他角色于其回合内使用的第一张牌的合法目标。",
   ["wd__suqi"] = "肃齐",
   [":wd__suqi"] = "结束阶段，你可以选择至少两名手牌数相等的其他角色，观看牌堆顶的X张牌（X为这些角色的数量），然后将这些牌任意交给你和这些角色，"..
-  "每名角色至多两张。 ",
+  "每名角色至多两张。",
+  ["wd__suqi_choose"] = "肃齐",
+  ["#wd__suqi-invoke"] = "肃齐：选择至少两名手牌数相等的其他角色，观看牌堆顶等量牌，然后将这些牌任意交给你或这些角色",
+  ["wd__suqi_active"] = "肃齐",
+  ["#wd__suqi-give"] = "肃齐：将这些牌任意交给你和目标角色，每名角色至多两张",
 }
 
 Fk:loadTranslationTable{
