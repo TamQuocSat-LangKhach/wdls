@@ -19,6 +19,7 @@ local wd__shuaiyan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:doIndicate(player.id, {target.id})
     local choices = {"wd__shuaiyan_draw"}
     if not target:isNude() then
       table.insert(choices, "wd__shuaiyan_discard")
@@ -34,7 +35,7 @@ local wd__shuaiyan = fk.CreateTriggerSkill{
 }
 local wd__moshou = fk.CreateTriggerSkill{
   name = "wd__moshou",
-  anim_type = "special",
+  anim_type = "defensive",
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseSkipping},
   can_trigger = function(self, event, target, player, data)
@@ -177,7 +178,7 @@ local wd__zhucheng_trigger = fk.CreateTriggerSkill{
     local room = player.room
     local from = room:getPlayerById(data.from)
     local n = #player:getPile("liufu_zhu")
-    if #from:getCardIds{Player.Hand, Player.Equip} < n or
+    if #from:getCardIds("he") < n or
       #room:askForDiscard(from, n, n, true, self.name, true, ".", "#wd__zhucheng-discard:"..player.id.."::"..n) < n then
       table.insertIfNeed(data.nullifiedTargets, player.id)
     end
@@ -187,7 +188,7 @@ local wd__duoqi = fk.CreateTriggerSkill{
   name = "wd__duoqi",
   anim_type = "control",
   expand_pile = "liufu_zhu",
-  events = {fk.AfterCardsMove, fk.FinishJudge},
+  events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) and #player:getPile("liufu_zhu") > 0 and player.room.current and player.room.current.phase == Player.Play then
       for _, move in ipairs(data) do
@@ -199,7 +200,8 @@ local wd__duoqi = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|.|liufu_zhu|.|.", "#wd__duoqi-invoke::"..player.room.current.id, "liufu_zhu")
+    local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|.|liufu_zhu|.|.",
+      "#wd__duoqi-invoke::"..player.room.current.id, "liufu_zhu")
     if #card > 0 then
       self.cost_data = card
       return true
@@ -215,7 +217,6 @@ local wd__duoqi = fk.CreateTriggerSkill{
       skillName = self.name,
       specialName = "liufu_zhu",
     })
-    player:removeCards(Player.Special, self.cost_data, "liufu_zhu")
     room.logic:getCurrentEvent():findParent(GameEvent.Phase):shutdown()
   end,
 }
@@ -364,24 +365,63 @@ Fk:loadTranslationTable{
   ["#wd__kangyin-choose"] = "亢音：你可以令至多%arg名角色各摸一张牌",
 }
 
+local tianyu = General(extension, "wd__tianyu", "wei", 4)
 local wd__chezhen = fk.CreateDistanceSkill{
   name = "wd__chezhen",
   correct_func = function(self, from, to)
-    if to:hasSkill(self.name) and #to.player_cards[Player.Equip] == 0 then
+    if to:hasSkill(self.name) and #to:getCardIds("e") == 0 then
       return 1
     end
-    if from:hasSkill(self.name) and #from.player_cards[Player.Equip] > 0 then
+    if from:hasSkill(self.name) and #from:getCardIds("e") > 0 then
       return -1
     end
     return 0
   end,
 }
+local wd__youzhan = fk.CreateTriggerSkill{
+  name = "wd__youzhan",
+  anim_type = "defensive",
+  events = {fk.PreCardEffect},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and data.card.trueName == "slash" and player:distanceTo(player.room:getPlayerById(data.to)) <= 1 and
+      not player:isNude()
+  end,
+  on_cost = function(self, event, target, player, data)
+    local prompt = ""
+    if data.from then
+      prompt = "#wd__youzhan-invoke:"..data.from..":"..data.to..":"..data.card:toLogString()
+    end
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|.|.|.|equip", prompt, true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(self.cost_data, self.name, player, player)
+    room:doIndicate(player.id, {data.to})
+    local card = Fk:cloneCard("wd_lure_in_deep")
+    card.skillName = self.name
+    local use = {
+      card = card,
+      from = data.to,
+    }
+    use.toCard = data.card
+    use.responseToEvent = data
+    player.room:useCard(use)
+    return true
+  end,
+}
+tianyu:addSkill(wd__chezhen)
+tianyu:addSkill(wd__youzhan)
 Fk:loadTranslationTable{
   ["wd__tianyu"] = "田豫",
   ["wd__chezhen"] = "车阵",
   [":wd__chezhen"] = "锁定技，若你的装备区内：没有牌，其他角色至你的距离+1；有牌，你至其他角色的距离-1。",
   ["wd__youzhan"] = "诱战",
   [":wd__youzhan"] = "当以你距离1以内角色为目标的【杀】结算开始时，你可以弃置一张装备牌，视为该角色使用【诱敌深入】。",
+  ["#wd__youzhan-invoke"] = "诱战：%src 对 %dest 使用%arg，你可以弃置一张装备牌，视为 %dest 使用【诱敌深入】",
 }
 
 local xizhenxihong = General(extension, "wd__xizhenxihong", "shu", 4)
@@ -452,7 +492,6 @@ local wd__jinyan = fk.CreateFilterSkill{
   name = "wd__jinyan",
   anim_type = "offensive",
   card_filter = function(self, to_select, player)
-    --FIXME: filterSkill 牌移动触发生效，在体力变化前的牌不会自动filter
     return player:hasSkill(self.name) and player.hp < 3 and to_select.type == Card.TypeTrick and to_select.color == Card.Black
   end,
   view_as = function(self, to_select)
@@ -559,13 +598,7 @@ local wd__juntun = fk.CreateActiveSkill{
     return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip
   end,
   on_use = function(self, room, effect)
-    room:moveCards({
-      ids = effect.cards,
-      from = effect.from,
-      toArea = Card.DiscardPile,
-      moveReason = fk.ReasonPutIntoDiscardPile,
-    })
-    room:getPlayerById(effect.from):drawCards(1, self.name)
+    room:recastCard(effect.cards, room:getPlayerById(effect.from), self.name)
   end,
 }
 wd__liangce:addRelatedSkill(wd__liangce_trigger)

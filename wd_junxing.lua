@@ -105,8 +105,8 @@ Fk:loadTranslationTable{
   [":wd__juesi"] = "锁定技，你除【杀】、【桃】、【酒】以外的基本牌均视为【杀】。",
   ["@@wd__zudi"] = "阻敌",
   ["#wd__zudi-choose"] = "阻敌：选择一名角色，当你或其成为【杀】的目标时，你可以弃置一张牌或失去1点体力取消之，然后视为对使用者使用【决斗】",
-  ["#wd__zudi-invoke"] = "阻敌：你可以弃置一张牌或失去1点体力取消对 %src 使用的【杀】，并视为对 %arg 使用【决斗】",
-  ["#wd__zudi2-invoke"] = "阻敌：你可以弃置一张牌或失去1点体力取消对 %src 使用的【杀】",
+  ["#wd__zudi-invoke"] = "阻敌：你可以弃置一张牌或失去1点体力，取消对 %src 使用的【杀】，并视为对 %arg 使用【决斗】",
+  ["#wd__zudi2-invoke"] = "阻敌：你可以弃置一张牌或失去1点体力，取消对 %src 使用的【杀】",
   ["#wd__zudi-discard"] = "阻敌：你需弃置一张牌，否则失去1点体力",
 }
 
@@ -436,12 +436,59 @@ Fk:loadTranslationTable{
   ["#wd__yijian-choose"] = "遗荐：你可以令一名角色获得〖恳谏〗和〖遗荐〗",
 }
 
+local lvqian = General(extension, "wd__lvqian", "wei", 4)
+local wd__zongqin = fk.CreateViewAsSkill{
+  name = "wd__zongqin",
+  anim_type = "offensive",
+  pattern = "wd_let_off_enemy",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).suit == Card.Spade
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("wd_let_off_enemy")
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+}
+local wd__daibing = fk.CreateTriggerSkill{
+  name = "wd__daibing",
+  anim_type = "drawcard",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.card.color == Card.Black and
+      data.damageDealt
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#wd__daibing-invoke")
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(1, self.name)
+    local current = room.logic:getCurrentEvent()
+    local use_event = current:findParent(GameEvent.UseCard)
+    if not use_event then return end
+    local phase_event = use_event:findParent(GameEvent.Phase)
+    if not phase_event then return end
+    use_event:addExitFunc(function()
+      phase_event:shutdown()
+    end)
+    player:gainAnExtraPhase(Player.Play, true)
+  end,
+}
+lvqian:addSkill(wd__zongqin)
+lvqian:addSkill(wd__daibing)
 Fk:loadTranslationTable{
   ["wd__lvqian"] = "吕虔",
   ["wd__zongqin"] = "纵擒",
   [":wd__zongqin"] = "出牌阶段限一次，你可以将一张♠牌当【欲擒故纵】使用。",
   ["wd__daibing"] = "岱兵",
-  [":wd__daibing"] = "当你于出牌阶段内使用黑色牌造成伤害后，此牌结算后你可以摸一张牌并结束出牌阶段，然后你执行一个额外的出牌阶段。",
+  [":wd__daibing"] = "当你于出牌阶段内使用黑色牌结算后，若此牌造成过伤害，你可以摸一张牌并结束出牌阶段，然后你执行一个额外的出牌阶段。",
+  ["#wd__daibing-invoke"] = "岱兵：你可以摸一张牌，结束出牌阶段，然后执行一个额外的出牌阶段",
 }
 
 Fk:loadTranslationTable{
@@ -495,9 +542,9 @@ local wd__wangsi_trigger = fk.CreateTriggerSkill{
   name = "#wd__wangsi_trigger",
   mute = true,
   frequency = Skill.Compulsory,
-  events = {fk.TurnEnd},
+  events = {fk.EventPhaseChanging},
   can_trigger = function(self, event, target, player, data)
-    return player:usedSkillTimes("wd__wangsi", Player.HistoryTurn) > 0
+    return data.to == Player.NotActive and player:usedSkillTimes("wd__wangsi", Player.HistoryTurn) > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -512,7 +559,8 @@ sunguan:addSkill(wd__wangsi)
 Fk:loadTranslationTable{
   ["wd__sunguan"] = "孙观",
   ["wd__jimeng"] = "激猛",
-  [":wd__jimeng"] = "锁定技，当于你的出牌阶段内造成过伤害的牌结算结束后，你摸X张牌，然后若X大于你的体力值，你失去1点体力。（X为你于此阶段内发动〖激猛〗的次数）",
+  [":wd__jimeng"] = "锁定技，当你于出牌阶段内使用牌结算结束后，若此牌造成过伤害，你摸X张牌，然后若X大于你的体力值，你失去1点体力"..
+  "（X为你此阶段发动〖激猛〗的次数）。",
   ["wd__wangsi"] = "忘死",
   [":wd__wangsi"] = "锁定技，当你于一名角色的出牌阶段内扣减体力前，若你体力值为1，防止之；此回合结束后，你失去等量的体力。",
   ["@wd__jimeng-phase"] = "激猛",
@@ -526,7 +574,7 @@ Fk:loadTranslationTable{
   ["wd__duanfa"] = "断发",
   [":wd__duanfa"] = "①当你成为其他角色使用牌的目标后，若你的体力值大于1，你可以失去体力至1，令此牌对你无效。<br>"..
   "②当你受到非锦囊牌造成的伤害时，若你的体力值为1，防止此伤害。<br>"..
-  "③当你受到锦囊牌造成的伤害时，若你的体力值为1且此牌目标数大于一，防止此伤害。",
+  "③当你受到锦囊牌造成的伤害时，若你的体力值为1且此牌目标数大于1，防止此伤害。",
 }
 
 return extension
