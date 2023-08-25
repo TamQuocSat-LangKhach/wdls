@@ -50,7 +50,7 @@ local wdPoisonProhibit = fk.CreateProhibitSkill{
   name = "#wd_poison_prohibit",
   global = true,
   prohibit_use = function(self, player, card)
-    if card.name == "peach" and player.dying then
+    if card and card.name == "peach" and player.dying then
       if RoomInstance and RoomInstance.logic:getCurrentEvent().event == GameEvent.Dying then
         local data = RoomInstance.logic:getCurrentEvent().data[1]
         return data and data.extra_data and data.extra_data.wdPoison
