@@ -629,7 +629,7 @@ local wdSevenStarsSwordSkill = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetSpecified, fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and data.card.trueName == "slash" then
+    if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
       if event == fk.TargetSpecified then
         return data.firstTarget
       else
@@ -679,7 +679,7 @@ local wdSunMoonHalberdSkill = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.trueName == "slash"
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash"
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -770,7 +770,7 @@ local wdBreastplateSkill = fk.CreateTriggerSkill{
   attached_equip = "wd_breastplate",
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and
+    return target == player and player:hasSkill(self) and
       player:getEquipment(Card.SubtypeArmor) ~= nil and Fk:getCardById(player:getEquipment(Card.SubtypeArmor)).name == "wd_breastplate" and
       not player:prohibitDiscard(Fk:getCardById(player:getEquipment(Card.SubtypeArmor)))
   end,
@@ -819,7 +819,7 @@ Fk:loadTranslationTable{
 local wdCrossbowTankSkill = fk.CreateTargetModSkill{
   name = "#wd_crossbow_tank_skill",
   residue_func = function(self, player, skill, scope, card)
-    if card and player:hasSkill(self.name) and card.trueName == "slash" and scope == Player.HistoryPhase then
+    if card and player:hasSkill(self) and card.trueName == "slash" and scope == Player.HistoryPhase then
       return 1
     end
   end,

@@ -85,7 +85,7 @@ local wd__xikou = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.BeforeCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) then
+    if player:hasSkill(self) then
       for _, move in ipairs(data) do
         return move.from == player.id or move.proposer == player.id or move.proposer == player
       end
@@ -175,7 +175,7 @@ local wd__wanlan = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.AfterCardUseDeclared, fk.CardResponding},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.color == Card.Red and
+    return target == player and player:hasSkill(self) and data.card.color == Card.Red and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
@@ -195,7 +195,7 @@ local wd__wanlan2 = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.AfterCardUseDeclared, fk.CardResponding},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.color == Card.Black and
+    return target == player and player:hasSkill(self) and data.card.color == Card.Black and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
@@ -329,7 +329,7 @@ local wd__bohu = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.EventPhaseStart, fk.PreCardUse},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) then
+    if target == player and player:hasSkill(self) then
       if event == fk.EventPhaseStart then
         return player.phase == Player.Start or (player:getMark("@wd__bohu-turn") ~= 0 and string.find(player:getMark("@wd__bohu-turn"), "3") and
           player.phase == Player.Discard and player:isWounded())
@@ -412,7 +412,7 @@ local wd__bohu = fk.CreateTriggerSkill{
 local wd__bohu_distance = fk.CreateDistanceSkill{
   name = "#wd__bohu_distance",
   correct_func = function(self, from, to)
-    if from:hasSkill(self.name) and from:getMark("@wd__bohu-turn") ~= 0 and string.find(from:getMark("@wd__bohu-turn"), "1") then
+    if from:hasSkill(self) and from:getMark("@wd__bohu-turn") ~= 0 and string.find(from:getMark("@wd__bohu-turn"), "1") then
       return -from:getLostHp()
     end
     return 0
@@ -424,7 +424,7 @@ local wd__fenjie = fk.CreateTriggerSkill{
   frequency = Skill.Limited,
   events = {fk.EventPhaseChanging},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.from == Player.RoundStart and
+    return target == player and player:hasSkill(self) and data.from == Player.RoundStart and
       player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_cost = function(self, event, target, player, data)
@@ -493,7 +493,7 @@ local wd__anxiao = fk.CreateProhibitSkill{
   name = "wd__anxiao",
   frequency = Skill.Compulsory,
   is_prohibited = function(self, from, to, card)
-    if to:hasSkill(self.name) then
+    if to:hasSkill(self) then
       return from.phase ~= Player.NotActive and from:getMark("wd__anxiao-turn") == 0
     end
   end,
@@ -514,7 +514,7 @@ local wd__suqi = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Finish and #player.room.alive_players > 2 then
+    if target == player and player:hasSkill(self) and player.phase == Player.Finish and #player.room.alive_players > 2 then
       local nums = {}
       for _, p in ipairs(player.room:getOtherPlayers(player)) do
         table.insertIfNeed(nums, p:getHandcardNum())
