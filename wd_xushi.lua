@@ -26,10 +26,10 @@ local wd__shuaiyan = fk.CreateTriggerSkill{
     end
     local choice = room:askForChoice(target, choices, self.name, "#wd__shuaiyan-choice:"..player.id)
     if choice == "wd__shuaiyan_draw" then
-      player:drawCards(1, self.name)
+      player:drawCards(2, self.name)
     else
-      local id = room:askForCardChosen(player, target, "he", self.name)
-      room:throwCard({id}, self.name, target, player)
+      local cards = room:askForCardsChosen(player, target, 1, 2, "he", self.name)
+      room:throwCard(cards, self.name, target, player)
     end
   end,
 }
@@ -50,12 +50,12 @@ feishi:addSkill(wd__moshou)
 Fk:loadTranslationTable{
   ["wd__feishi"] = "费诗",
   ["wd__shuaiyan"] = "率言",
-  [":wd__shuaiyan"] = "当其他角色于你的回合外回复体力后，你可以令该角色选择一项：1.你摸一张牌；2.你弃置其一张牌。",
+  [":wd__shuaiyan"] = "当其他角色于你的回合外回复体力后，你可以令该角色选择一项：1.你摸两张牌；2.你弃置其至多两张牌。",
   ["wd__moshou"] = "墨守",
   [":wd__moshou"] = "锁定技，你不能跳过阶段。",
-  ["#wd__shuaiyan-invoke"] = "率言：你可以令 %dest 选择你摸一张牌或你弃置其一张牌",
-  ["wd__shuaiyan_draw"] = "其摸一张牌",
-  ["wd__shuaiyan_discard"] = "其弃置你一张牌",
+  ["#wd__shuaiyan-invoke"] = "率言：你可以令 %dest 选择你摸两张牌或你弃置其两张牌",
+  ["wd__shuaiyan_draw"] = "其摸两张牌",
+  ["wd__shuaiyan_discard"] = "其弃置你两张牌",
   ["#wd__shuaiyan-choice"] = "率言：请选择 %src 执行的一项",
 }
 
@@ -95,17 +95,23 @@ local wd__ciqiu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       if event == fk.DamageCaused then
-        return target == player and not data.to:isWounded() and not data.chain
+        return target == player and not data.chain and
+          (not data.to:isWounded() or data.to:getEquipment(Card.SubtypeArmor) or data.to:getEquipment(Card.SubtypeDefensiveRide))
       else
-        return player:getMark(self.name) == target.id
+        return data.extra_data and data.extra_data.wd__ciqiu and
+          data.extra_data.wd__ciqiu[1] == player.id and data.extra_data.wd__ciqiu[2] == target.id
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     if event == fk.DamageCaused then
-      data.damage = data.damage + 1
+      if not data.to:isWounded() then
+        data.damage = data.damage + 1
+      end
+      if data.to:getEquipment(Card.SubtypeArmor) or data.to:getEquipment(Card.SubtypeDefensiveRide) then
+        data.damage = data.damage + 1
+      end
     else
-      player.room:setPlayerMark(player, self.name, 0)
       player.room:killPlayer({
         who = target.id,
         damage = data.damageEvent,
@@ -122,7 +128,8 @@ local wd__ciqiu = fk.CreateTriggerSkill{
       data.damageEvent.damage >= target.hp and not data.damageEvent.chain
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, target.id)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.wd__ciqiu = {player.id, target.id}
   end,
 }
 hanlong:addSkill(wd__siji)
@@ -132,8 +139,9 @@ Fk:loadTranslationTable{
   ["wd__siji"] = "伺机",
   [":wd__siji"] = "弃牌阶段结束时，你可以摸2X张牌（X为你于此阶段内弃置的【杀】的数量）。",
   ["wd__ciqiu"] = "刺酋",
-  [":wd__ciqiu"] = "①锁定技，当你使用【杀】对目标造成伤害时，若其未受伤，此伤害+1。<br>"..
-  "②锁定技，当未受伤的角色因受到你使用【杀】造成的伤害而扣减体力至0时，你杀死该角色，然后你失去〖刺酋〗。",
+  [":wd__ciqiu"] = "①锁定技，当你使用【杀】对未受伤的目标造成伤害时，此伤害+1。<br>"..
+  "②锁定技，当你使用【杀】对有防具或防御坐骑的目标造成伤害时，此伤害+1。<br>"..
+  "③锁定技，当未受伤的角色因受到你使用【杀】造成的伤害而扣减体力至0时，你杀死该角色，然后你失去〖刺酋〗。",
 }
 
 local liufu = General(extension, "wd__liufu", "wei", 3)
@@ -275,7 +283,7 @@ local wd__geju = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Start
   end,
   on_cost = function(self, event, target, player, data)
-    local kingdoms = {}
+    local kingdoms = {"wei", "shu", "wu", "qun"}
     for _, p in ipairs(Fk:currentRoom().alive_players) do
       table.insertIfNeed(kingdoms, p.kingdom)
     end
@@ -285,8 +293,8 @@ local wd__geju = fk.CreateTriggerSkill{
       end
     end
     if #kingdoms > 0 then
-      self.cost_data = #kingdoms
-      return player.room:askForSkillInvoke(player, self.name, nil, "#geju-invoke:::"..#kingdoms)
+      self.cost_data = 2 * #kingdoms
+      return player.room:askForSkillInvoke(player, self.name)
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -301,8 +309,7 @@ Fk:loadTranslationTable{
   ["wd__juedao"] = "绝道",
   [":wd__juedao"] = "①出牌阶段，你可以弃置一张手牌，横置武将牌。<br>②若你处于连环状态，你至其他角色、其他角色至你的距离各+1。",
   ["wd__geju"] = "割据",
-  [":wd__geju"] = "准备阶段，你可以摸X张牌（X为攻击范围内不含有你的势力数）。",
-  ["#geju-invoke"] = "割据：你可以摸%arg张牌",
+  [":wd__geju"] = "准备阶段，你可以摸2X张牌（X为攻击范围内不含有你的势力数）。",
 }
 
 local liuzan = General(extension, "wd__liuzan", "wu", 4)
