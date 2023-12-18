@@ -225,7 +225,8 @@ local wdGoldTrigger = fk.CreateTriggerSkill{
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     return target == player and data.from and data.from ~= player and not data.from.dead and
-      table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_gold" end)
+      (table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_gold" end) or
+      player:hasSkill("wd__juqi_viewas") and #player:getPile("wd__mizhu_silver") > 0)
   end,
   on_cost = function(self, event, target, player, data)
     local use = player.room:askForUseCard(player, "", "wd_gold", "#wd_gold-use::"..data.from.id, true)
@@ -293,11 +294,14 @@ extension:addCards{
 local wdStopThirstSkill = fk.CreateActiveSkill{
   name = "wd_stop_thirst_skill",
   target_num = 1,
+  prompt = "#wd_stop_thirst_skill",
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return true
   end,
-  target_filter = function(self, to_select)
-    return true
+  target_filter = function(self, to_select, selected, selected_cards, card)
+    if #selected < self:getMaxTargetNum(Self, card) then
+      return self:modTargetFilter(to_select, selected, Self.id, card)
+    end
   end,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -312,7 +316,7 @@ local wdStopThirstSkill = fk.CreateActiveSkill{
         num = 1,
         card = effect.card,
         recoverBy = player,
-        skillName = self.name
+        skillName = self.name,
       })
     end
   end,
@@ -330,22 +334,26 @@ Fk:loadTranslationTable{
   ["wd_stop_thirst_skill"] = "望梅止渴",
 	[":wd_stop_thirst"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名角色<br/><b>效果</b>：若目标是手牌最少的角色，其摸两张牌；"..
   "然后若目标是体力值最小的角色，其回复1点体力。",
+  ["#wd_stop_thirst_skill"] = "若目标手牌最少，其摸两张牌；若目标体力最少，其回复1点体力",
 }
 
 local wdLetOffEnemySkill = fk.CreateActiveSkill{
   name = "wd_let_off_enemy_skill",
   target_num = 1,
+  prompt = "#wd_let_off_enemy_skill",
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user ~= to_select
   end,
-  target_filter = function(self, to_select)
-    return to_select ~= Self.id
+  target_filter = function(self, to_select, selected, selected_cards, card)
+    if #selected < self:getMaxTargetNum(Self, card) then
+      return self:modTargetFilter(to_select, selected, Self.id, card)
+    end
   end,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
     if target.dead then return end
-    target:drawCards(1, self.name)
+    target:drawCards(1, "wd_let_off_enemy")
     if player.dead or target.dead then return end
     local choices = {"duel"}
     if not target:isAllNude() then
@@ -354,7 +362,7 @@ local wdLetOffEnemySkill = fk.CreateActiveSkill{
     if not target:isKongcheng() then
       table.insert(choices, "fire_attack")
     end
-    local choice = room:askForChoice(player, choices, self.name, "#wd_let_off_enemy-choice::"..target.id)
+    local choice = room:askForChoice(player, choices, "wd_let_off_enemy", "#wd_let_off_enemy-choice::"..target.id)
     if choice ~= "fire_attack" then
       room:broadcastPlaySound("./packages/standard_cards/audio/card/".. (player.gender == General.Male and "male/" or "female/") .. choice)
     else
@@ -380,6 +388,7 @@ Fk:loadTranslationTable{
   ["wd_let_off_enemy_skill"] = "欲擒故纵",
 	[":wd_let_off_enemy"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：目标角色摸一张牌，然后你对其执行"..
   "下列一种牌的效果：【过河拆桥】、【决斗】、【火攻】。",
+  ["#wd_let_off_enemy_skill"] = "令一名角色摸一张牌，然后选择对其执行一种牌的效果：【过河拆桥】、【决斗】、【火攻】",
   ["#wd_let_off_enemy-choice"] = "欲擒故纵：选择对 %dest 执行一种牌的效果",
 }
 
@@ -417,9 +426,7 @@ local wdLureInDeepTrigger = fk.CreateTriggerSkill{
 }
 local wdLureInDeepSkill = fk.CreateActiveSkill{
   name = "wd_lure_in_deep_skill",
-  can_use = function()
-    return false
-  end,
+  can_use = Util.FalseFunc,
   on_effect = function(self, room, effect)
     if effect.responseToEvent then
       effect.responseToEvent.isCancellOut = true
@@ -446,7 +453,7 @@ local wdLureInDeepSkill = fk.CreateActiveSkill{
           to = from,
           card = effect.card,
           damage = 1,
-          skillName = self.name,
+          skillName = "wd_lure_in_deep",
         }
       end
     end
@@ -483,6 +490,7 @@ local wdDrowningSkill = fk.CreateActiveSkill{
   name = "wd_drowning_skill",
   can_use = Util.AoeCanUse,
   on_use = Util.AoeOnUse,
+  prompt = "#wd_drowning_skill",
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user ~= to_select
   end,
@@ -554,6 +562,7 @@ Fk:loadTranslationTable{
   ["wd_drowning_skill"] = "水淹七军",
 	[":wd_drowning"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：所有其他角色<br/><b>效果</b>：你展示一张手牌，目标角色依次选择一项："..
   "1.弃置一张与展示牌类别相同的牌；2.你对其造成1点伤害。",
+  ["#wd_drowning_skill"] = "你展示一张手牌，所有其他角色需弃置一张相同类别的牌，否则受到1点伤害",
   ["#wd_drowning-show"] = "请为%arg展示一张手牌",
   ["#wd_drowning-discard"] = "水淹七军：弃置一张%arg，否则受到1点伤害",
 }
@@ -561,6 +570,7 @@ Fk:loadTranslationTable{
 local wdSaveEnergySkill = fk.CreateActiveSkill{
   name = "wd_save_energy_skill",
   target_num = 1,
+  prompt = "#wd_save_energy_skill",
   target_filter = function(self, to_select, selected)
     if #selected == 0 then
       local player = Fk:currentRoom():getPlayerById(to_select)
@@ -618,6 +628,7 @@ Fk:loadTranslationTable{
   ["wd_save_energy_skill"] = "养精蓄锐",
 	[":wd_save_energy"] = "延时锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：将此牌置于目标角色判定区内。"..
   "其判定阶段进行判定：若结果不为<font color='red'>♦</font>，其跳过弃牌阶段，将此牌置于其判定区。",
+  ["#wd_save_energy_skill"] = "选择一名其他角色，将此牌置于其判定区内。其判定阶段判定：<br/>若结果不为<font color='#CC3131'>♦</font>，其跳过弃牌阶段",
 }
 
 local wdSevenStarsSwordSkill = fk.CreateTriggerSkill{
