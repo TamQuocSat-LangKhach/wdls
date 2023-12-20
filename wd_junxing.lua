@@ -1,5 +1,5 @@
 local extension = Package("wd_junxing")
-extension.extensionName = "wandianlunsha"
+extension.extensionName = "wdls"
 
 local U = require "packages/utility/utility"
 
