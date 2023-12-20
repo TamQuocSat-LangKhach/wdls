@@ -191,12 +191,12 @@ local wd__zhucheng_trigger = fk.CreateTriggerSkill{
   events = {fk.TargetConfirmed},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
-      data.from ~= player.id
+      data.from ~= player.id and #player:getPile("liufu_zhu") > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local from = room:getPlayerById(data.from)
-    local n = player:getLostHp() + 1
+    local n = #player:getPile("liufu_zhu")
     if from.dead or #from:getCardIds("he") < n or
       #room:askForDiscard(from, n, n, true, self.name, true, ".", "#wd__zhucheng-discard:"..player.id.."::"..n) < n then
       table.insertIfNeed(data.nullifiedTargets, player.id)
@@ -247,8 +247,8 @@ liufu:addSkill(wd__duoqi)
 Fk:loadTranslationTable{
   ["wd__liufu"] = "刘馥",
   ["wd__zhucheng"] = "筑城",
-  [":wd__zhucheng"] = "①结束阶段，你可以获得所有“筑”，然后将牌堆顶X张牌置于你的武将牌上，称为“筑”。<br>"..
-  "②锁定技，当你成为其他角色使用【杀】或普通锦囊牌的目标时，其需弃置X张牌，否则此牌对你无效（X为你已损失体力值+1）。",
+  [":wd__zhucheng"] = "①结束阶段，你可以获得所有“筑”，然后将牌堆顶X张牌置于你的武将牌上，称为“筑”（X为你已损失体力值+1）。<br>"..
+  "②锁定技，当你成为其他角色使用【杀】或普通锦囊牌的目标时，其需弃置“筑”数量的牌，否则此牌对你无效。",
   ["wd__duoqi"] = "夺气",
   [":wd__duoqi"] = "当其他角色的出牌阶段内牌被弃置时，你可以将一张“筑”置入弃牌堆，终止一切结算并令当前出牌阶段结束。",
   ["liufu_zhu"] = "筑",
