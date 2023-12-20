@@ -190,7 +190,7 @@ local wd__zhucheng_trigger = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetConfirmed},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+    return target == player and player:hasSkill(self) and (data.card.trueName == "slash") and -- or data.card:isCommonTrick()) and
       data.from ~= player.id and #player:getPile("liufu_zhu") > 0
   end,
   on_use = function(self, event, target, player, data)
@@ -248,9 +248,9 @@ Fk:loadTranslationTable{
   ["wd__liufu"] = "刘馥",
   ["wd__zhucheng"] = "筑城",
   [":wd__zhucheng"] = "①结束阶段，你可以获得所有“筑”，然后将牌堆顶X张牌置于你的武将牌上，称为“筑”（X为你已损失体力值+1）。<br>"..
-  "②锁定技，当你成为其他角色使用【杀】或普通锦囊牌的目标时，其需弃置“筑”数量的牌，否则此牌对你无效。",
+  "②锁定技，当你成为其他角色使用【杀】的目标时，其需弃置“筑”数量的牌，否则此牌对你无效。",
   ["wd__duoqi"] = "夺气",
-  [":wd__duoqi"] = "当其他角色的出牌阶段内牌被弃置时，你可以将一张“筑”置入弃牌堆，终止一切结算并令当前出牌阶段结束。",
+  [":wd__duoqi"] = "当其他角色的出牌阶段内牌被弃置时，你可以将一张“筑”置入弃牌堆，在事件结算完成后结束该出牌阶段。",
   ["liufu_zhu"] = "筑",
   ["#wd__zhucheng-invoke"] = "筑城：你可以将牌堆顶%arg张牌作为“筑”置于武将牌上",
   ["#wd__zhucheng-get"] = "筑城：你可以获得所有“筑”",
