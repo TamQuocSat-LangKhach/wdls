@@ -1,8 +1,8 @@
-local wd_xushi = require "packages/wandianlunsha/wd_xushi"
-local wd_junxing = require "packages/wandianlunsha/wd_junxing"
-local wd_bingshi = require "packages/wandianlunsha/wd_bingshi"
+local wd_xushi = require "packages/wdls/wd_xushi"
+local wd_junxing = require "packages/wdls/wd_junxing"
+local wd_bingshi = require "packages/wdls/wd_bingshi"
 
-local wd_xushi_cards = require "packages/wandianlunsha/wd_xushi_cards"
+local wd_xushi_cards = require "packages/wdls/wd_xushi_cards"
 
 return {
   wd_xushi,
