@@ -1077,7 +1077,7 @@ local wd__wangsi = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.BeforeHpChanged},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.hp <= -data.num
+    return target == player and player:hasSkill(self) and player.hp <= -data.num and data.skillName ~= self.name
   end,
   on_use = function(self, event, target, player, data)
     player.room:addPlayerMark(player, "@wd__wangsi-turn", -data.num)
@@ -1090,7 +1090,7 @@ local wd__wangsi_trigger = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:usedSkillTimes("wd__wangsi", Player.HistoryTurn) > 0
+    return player:getMark("@wd__wangsi-turn") > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
