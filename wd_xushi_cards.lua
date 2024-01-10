@@ -94,15 +94,14 @@ local wdRunTrigger = fk.CreateTriggerSkill{
   events = {fk.TargetConfirmed},
   can_trigger = function(self, event, target, player, data)
     return target == player and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
-      (table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_run" end) or
-      player:hasSkill("wd__saotao&"))
+      table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_run" end)
   end,
   on_cost = function(self, event, target, player, data)
     local prompt = ""
     if data.from then
       prompt = "#wd_run-use:"..data.from.."::"..data.card:toLogString()
     end
-    local use = player.room:askForUseCard(player, "", "wd_run", prompt, true, nil, data)
+    local use = player.room:askForUseCard(player, "wd_run", nil, prompt, true, nil, data)
     if use then
       self.cost_data = use
       return true
@@ -118,8 +117,12 @@ local wdRunTrigger = fk.CreateTriggerSkill{
 }
 local wdRunSkill = fk.CreateActiveSkill{
   name = "wd_run_skill",
-  mod_target_filter = Util.TrueFunc,
-  can_use = Util.FalseFunc,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return true
+  end,
+  can_use = function()
+    return false
+  end,
   on_use = function(self, room, use)
     if not use.tos or #TargetGroup:getRealTargets(use.tos) == 0 then
       use.tos = { { use.from } }
@@ -168,7 +171,7 @@ local wdRiceTrigger = fk.CreateTriggerSkill{
       table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_rice" end)
   end,
   on_cost = function(self, event, target, player, data)
-    local use = player.room:askForUseCard(player, "", "wd_rice", "#wd_rice-use", true)
+    local use = player.room:askForUseCard(player, "wd_rice", nil, "#wd_rice-use", true)
     if use then
       self.cost_data = use
       return true
@@ -228,7 +231,7 @@ local wdGoldTrigger = fk.CreateTriggerSkill{
       table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "wd_gold" end)
   end,
   on_cost = function(self, event, target, player, data)
-    local use = player.room:askForUseCard(player, "", "wd_gold", "#wd_gold-use::"..data.from.id, true)
+    local use = player.room:askForUseCard(player, "wd_gold", nil, "#wd_gold-use::"..data.from.id, true)
     if use then
       self.cost_data = use
       return true
@@ -399,7 +402,7 @@ local wdLureInDeepTrigger = fk.CreateTriggerSkill{
     if data.from then
       prompt = "#wd_lure_in_deep-use:"..data.from.."::"..data.card:toLogString()
     end
-    local use = player.room:askForUseCard(player, "", "wd_lure_in_deep", prompt, true, nil, data)
+    local use = player.room:askForUseCard(player, "wd_lure_in_deep", nil, prompt, true, nil, data)
     if use then
       self.cost_data = use
       return true
