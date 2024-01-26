@@ -4,6 +4,8 @@ local wd_bingshi = require "packages/wdls/wd_bingshi"
 
 local wd_xushi_cards = require "packages/wdls/wd_xushi_cards"
 
+Fk:loadTranslationTable{ ["wdls"] = "玩点" }
+
 return {
   wd_xushi,
   wd_junxing,
