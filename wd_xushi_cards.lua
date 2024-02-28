@@ -241,6 +241,7 @@ local wdGoldTrigger = fk.CreateTriggerSkill{
     local use = self.cost_data
     use.tos = {{data.from.id}}
     player.room:useCard(use)
+    return true
   end,
 }
 local wdGoldSkill = fk.CreateActiveSkill{
@@ -250,19 +251,18 @@ local wdGoldSkill = fk.CreateActiveSkill{
   end,
   on_effect = function(self, room, effect)
     local target = room:getPlayerById(effect.to)
-    if target and not target.dead and not effect.card:isVirtual() or #effect.card.subcards > 0 then
-      room:moveCards{
-        ids = room:getSubcardsByRule(effect.card, { Card.Processing }),
-        to = target.id,
-        toArea = Card.PlayerHand,
-        moveReason = fk.ReasonGive,
-        skillName = self.name,
-        proposer = effect.from,
-      }
-    end
-    local event = room.logic:getCurrentEvent():findParent(GameEvent.Damage)
-    if event then
-      event:shutdown()
+    if target and not target.dead then
+      local cards = room:getSubcardsByRule(effect.card, { Card.Processing })
+      if #cards > 0 then
+        room:moveCards{
+          ids = cards,
+          to = target.id,
+          toArea = Card.PlayerHand,
+          moveReason = fk.ReasonGive,
+          skillName = self.name,
+          proposer = effect.from,
+        }
+      end
     end
   end
 }
@@ -432,13 +432,11 @@ local wdLureInDeepSkill = fk.CreateActiveSkill{
       local yes = true
       while not player.dead and not from.dead do
         local use = room:askForUseCard(from, "slash", "slash", "#wd_lure_in_deep-slash:"..player.id, true,
-          {must_targets = {player.id}, exclusive_targets = {player.id}, bypass_times = true})
-        if use then
-          room:useCard(use)
-          if use.damageDealt and use.damageDealt[player.id] then
-            yes = false
-          end
-        else
+          {must_targets = {player.id}, exclusive_targets = {player.id}, bypass_times = true, bypass_distances = true})
+        if not use then break end
+        room:useCard(use)
+        if use.damageDealt and use.damageDealt[player.id] then
+          yes = false
           break
         end
       end

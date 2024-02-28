@@ -1,6 +1,8 @@
 local extension = Package("wd_xushi")
 extension.extensionName = "wdls"
 
+local U = require "packages/utility/utility"
+
 Fk:loadTranslationTable{
   ["wd_xushi"] = "玩点-虚实篇",
   ["wd"] = "玩点",
@@ -451,13 +453,16 @@ local wd__fuchou = fk.CreateTriggerSkill{
     room:setPlayerMark(player, "@@wd__fuchou-turn", mark)
     table.insertIfNeed(data.nullifiedTargets, player.id)
   end,
-
-  refresh_events = {fk.EventPhaseStart},
-  can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self) and target.phase == Player.Finish and
-      player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and player:getMark("@@wd__fuchou-turn") ~= 0
+}
+local wd__fuchou_delay = fk.CreateTriggerSkill{
+  name = "#wd__fuchou_delay",
+  mute = true,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target.phase == Player.Finish and player:getMark("@@wd__fuchou-turn") ~= 0
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(1, self.name)
     for _, id in ipairs(player:getMark("@@wd__fuchou-turn")) do
@@ -466,8 +471,9 @@ local wd__fuchou = fk.CreateTriggerSkill{
       if to.dead then
         room:loseHp(player, 1, self.name)
       else
-        local use = room:askForUseCard(player, "slash", "slash", "#wd__fuchou-use::"..to.id, true, {must_targets = {to.id}})
+        local use = room:askForUseCard(player, "slash", "slash", "#wd__fuchou-use::"..to.id, true, {exclusive_targets = {to.id}})
         if use then
+          use.extraUse = true
           room:useCard(use)
         else
           room:loseHp(player, 1, self.name)
@@ -478,15 +484,10 @@ local wd__fuchou = fk.CreateTriggerSkill{
 }
 local wd__fuchou_distance = fk.CreateDistanceSkill{
   name = "#wd__fuchou_distance",
-  correct_func = function(self, from, to)
-    if from:hasSkill(self) and from:getMark("@@wd__fuchou-turn") ~= 0 then
-      if table.contains(from:getMark("@@wd__fuchou-turn"), to.id) then
-        from:setFixedDistance(to, 1)
-      else
-        from:removeFixedDistance(to)
-      end
+  fixed_func = function(self, from, to)
+    if table.contains(U.getMark(from, "@@wd__fuchou-turn"), to.id) then
+      return 1
     end
-    return 0
   end,
 }
 local wd__jinyan = fk.CreateFilterSkill{
@@ -499,8 +500,20 @@ local wd__jinyan = fk.CreateFilterSkill{
     return Fk:cloneCard("slash", to_select.suit, to_select.number)
   end,
 }
+local wd__jinyan_trigger = fk.CreateTriggerSkill{
+  name = "#wd__jinyan_trigger",
+  refresh_events = {fk.HpChanged},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and player:hasSkill(wd__jinyan, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player:filterHandcards()
+  end,
+}
+wd__fuchou:addRelatedSkill(wd__fuchou_delay)
 wd__fuchou:addRelatedSkill(wd__fuchou_distance)
 xizhenxihong:addSkill(wd__fuchou)
+wd__jinyan:addRelatedSkill(wd__jinyan_trigger)
 xizhenxihong:addSkill(wd__jinyan)
 Fk:loadTranslationTable{
   ["wd__xizhenxihong"] = "习珍习宏",
@@ -512,6 +525,7 @@ Fk:loadTranslationTable{
   ["#wd__fuchou-invoke"] = "负仇：你可以交给 %dest 一张牌令此【杀】对你无效，结束阶段你需对其使用【杀】或失去体力",
   ["@@wd__fuchou-turn"] = "负仇",
   ["#wd__fuchou-use"] = "负仇：你需对 %dest 使用【杀】，否则失去1点体力",
+  ["#wd__fuchou_delay"] = "负仇",
 }
 
 Fk:loadTranslationTable{

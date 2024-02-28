@@ -81,37 +81,42 @@ Fk:loadTranslationTable{
 local cuilin = General(extension, "wd__cuilin", "wei", 3)
 local wd__xikou = fk.CreateTriggerSkill{
   name = "wd__xikou",
+  events = {fk.BeforeCardsMove},
   mute = true,
   frequency = Skill.Compulsory,
-  events = {fk.BeforeCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) then
-      for _, move in ipairs(data) do
-        return move.from == player.id or move.proposer == player.id or move.proposer == player
+    if not player:hasSkill(self) then return false end
+    for _, move in ipairs(data) do
+      if move.from == player.id and (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and move.proposer ~= player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerHand then
+            self.cost_data = "defensive"
+            return true
+          end
+        end
+      end
+      if move.from ~= player.id and move.moveReason == fk.ReasonPrey and move.to == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerHand then
+            self.cost_data = "negative"
+            return true
+          end
+        end
       end
     end
   end,
   on_use = function(self, event, target, player, data)
+    player.room:notifySkillInvoked(player, self.name, self.cost_data)
     for _, move in ipairs(data) do
-      if move.from == player.id then
+      if (move.from == player.id and (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and move.proposer ~= player.id) or (move.from ~= player.id and move.moveReason == fk.ReasonPrey and move.to == player.id) then
+        local move_info = {}
         for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerHand then
-            if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and
-              (move.proposer ~= player and move.proposer ~= player.id) then
-              player.room:notifySkillInvoked(player, self.name, "defensive")
-              return true
-            end
+          local id = info.cardId
+          if info.fromArea ~= Card.PlayerHand then
+            table.insert(move_info, info)
           end
         end
-      else
-        for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerHand then
-            if move.moveReason == fk.ReasonPrey and (move.proposer == player.id or move.proposer == player) then
-              player.room:notifySkillInvoked(player, self.name, "negative")
-              return true
-            end
-          end
-        end
+        move.moveInfo = move_info
       end
     end
   end,
@@ -139,13 +144,15 @@ local wd__suli = fk.CreateActiveSkill{
     local n = player:getHandcardNum() - player.hp
     if n > 0 then
       room:askForDiscard(player, n, n, false, self.name, false)
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p) return not p:isNude() end), function(p) return p.id end)
+      local targets = table.filter(room:getOtherPlayers(player), function(p) return not p:isNude() end)
       if #targets == 0 then return end
-      local tos = room:askForChoosePlayers(player, targets, 1, n, "#wd__suli-choose:::"..n, self.name, true)
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, n, "#wd__suli-choose:::"..n, self.name, true)
       if #tos > 0 then
+        room:sortPlayersByAction(tos)
         for _, id in ipairs(tos) do
+          if player.dead then break end
           local p = room:getPlayerById(id)
-          if not player.dead and not to.dead and not p:isNude() then
+          if not p.dead and not p:isNude() then
             local c = room:askForCardChosen(player, p, "he", self.name)
             room:throwCard({c}, self.name, p, player)
           end
