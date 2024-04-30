@@ -816,6 +816,7 @@ Fk:loadTranslationTable{
 
 local wdCrossbowTankSkill = fk.CreateTargetModSkill{
   name = "#wd_crossbow_tank_skill",
+  attached_equip = "wd_crossbow_tank",
   residue_func = function(self, player, skill, scope, card)
     if card and player:hasSkill(self) and card.trueName == "slash" and scope == Player.HistoryPhase then
       return 1
