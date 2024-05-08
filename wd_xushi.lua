@@ -97,9 +97,9 @@ local wd__ciqiu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       if event == fk.DamageCaused then
-        return target == player and not data.to:isWounded() and not data.chain
+        return target == player and not data.to:isWounded() and player.room.logic:damageByCardEffect()
       else
-        return player:getMark(self.name) == target.id
+        return not target.dead and target.hp == 0 and (data.extra_data or {}).wd__ciqiu_check == player.id
       end
     end
   end,
@@ -107,7 +107,6 @@ local wd__ciqiu = fk.CreateTriggerSkill{
     if event == fk.DamageCaused then
       data.damage = data.damage + 1
     else
-      player.room:setPlayerMark(player, self.name, 0)
       player.room:killPlayer({
         who = target.id,
         damage = data.damageEvent,
@@ -118,19 +117,20 @@ local wd__ciqiu = fk.CreateTriggerSkill{
 
   refresh_events = {fk.BeforeHpChanged},
   can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.damageEvent and
+    return player:hasSkill(self) and data.num < 0 and data.damageEvent and
       data.damageEvent.from == player and not target:isWounded() and
-      data.damageEvent.card and data.damageEvent.card.trueName == "slash" and
-      data.damageEvent.damage >= target.hp and not data.damageEvent.chain
+      data.damageEvent.card and data.damageEvent.card.trueName == "slash"
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, target.id)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.wd__ciqiu_check = player.id
   end,
 }
 hanlong:addSkill(wd__siji)
 hanlong:addSkill(wd__ciqiu)
 Fk:loadTranslationTable{
   ["wd__hanlong"] = "韩龙",
+  ["#wd__hanlong"] = "孤刃枭胡首",
   ["wd__siji"] = "伺机",
   [":wd__siji"] = "弃牌阶段结束时，你可以摸2X张牌（X为你于此阶段内弃置的【杀】的数量）。",
   ["wd__ciqiu"] = "刺酋",
