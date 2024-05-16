@@ -73,7 +73,7 @@ extension:addCards{
 }
 Fk:loadTranslationTable{
   ["wd_poison__slash"] = "毒杀",
-	[":wd_poison__slash"] = "基本牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：攻击范围内的一名角色<br/><b>效果</b>：对目标角色造成1点毒素伤害。"..
+  [":wd_poison__slash"] = "基本牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：攻击范围内的一名角色<br/><b>效果</b>：对目标角色造成1点毒素伤害。"..
   "（一名角色受到毒素伤害而进入的濒死结算中，其不能使用【桃】）。",
 }
 
@@ -155,7 +155,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_run"] = "走",
   ["wd_run_skill"] = "走",
-	[":wd_run"] = "基本牌<br/><b>时机</b>：成为【杀】或普通锦囊牌的目标后<br/><b>目标</b>：你<br/><b>效果</b>：目标角色展示所有手牌，"..
+  [":wd_run"] = "基本牌<br/><b>时机</b>：成为【杀】或普通锦囊牌的目标后<br/><b>目标</b>：你<br/><b>效果</b>：目标角色展示所有手牌，"..
   "然后此【杀】或锦囊对目标角色无效。",
   ["#wd_run-use"] = "%src 对你使用%arg，你可以使用【走】令此牌对你无效",
 }
@@ -216,7 +216,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_rice"] = "粮",
   ["wd_rice_skill"] = "粮",
-	[":wd_rice"] = "基本牌<br/><b>时机</b>：弃牌阶段开始时<br/><b>目标</b>：你<br/><b>效果</b>：目标角色摸一张牌，然后其此回合手牌上限无限。",
+  [":wd_rice"] = "基本牌<br/><b>时机</b>：弃牌阶段开始时<br/><b>目标</b>：你<br/><b>效果</b>：目标角色摸一张牌，然后其此回合手牌上限无限。",
   ["#wd_rice-use"] = "你可以使用【粮】，摸一张牌且本回合手牌上限无限",
 }
 
@@ -278,7 +278,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_gold"] = "金",
   ["wd_gold_skill"] = "金",
-	[":wd_gold"] = "基本牌<br/><b>时机</b>：受到其他角色造成的伤害时<br/><b>目标</b>：伤害来源<br/><b>效果</b>：目标角色获得此牌，防止此伤害。",
+  [":wd_gold"] = "基本牌<br/><b>时机</b>：受到其他角色造成的伤害时<br/><b>目标</b>：伤害来源<br/><b>效果</b>：目标角色获得此牌，防止此伤害。",
   ["#wd_gold-use"] = "你可以使用【金】，令伤害来源 %dest 获得【金】，防止你受到的伤害",
 }
 
@@ -289,7 +289,7 @@ extension:addCards{
 --[[Fk:loadTranslationTable{
   ["wd_gold"] = "草船借箭",
   ["wd_gold_skill"] = "草船借箭",--♠K，♦K
-	[":wd_gold"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名有手牌的其他角色<br/><b>效果</b>：目标选择一项：1.将至少一张【杀】交给你，"..
+  [":wd_gold"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名有手牌的其他角色<br/><b>效果</b>：目标选择一项：1.将至少一张【杀】交给你，"..
   "若其中有火【杀】，其对你造成1点火属性伤害；2.令你观看其手牌并弃置其中一张牌，若如此做，其手牌于此回合内对所有角色可见。",
 }]]
 
@@ -331,7 +331,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_stop_thirst"] = "望梅止渴",
   ["wd_stop_thirst_skill"] = "望梅止渴",
-	[":wd_stop_thirst"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名角色<br/><b>效果</b>：若目标是手牌最少的角色，其摸两张牌；"..
+  [":wd_stop_thirst"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名角色<br/><b>效果</b>：若目标是手牌最少的角色，其摸两张牌；"..
   "然后若目标是体力值最小的角色，其回复1点体力。",
 }
 
@@ -381,7 +381,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_let_off_enemy"] = "欲擒故纵",
   ["wd_let_off_enemy_skill"] = "欲擒故纵",
-	[":wd_let_off_enemy"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：目标角色摸一张牌，然后你对其执行"..
+  [":wd_let_off_enemy"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：目标角色摸一张牌，然后你对其执行"..
   "下列一种牌的效果：【过河拆桥】、【决斗】、【火攻】。",
   ["#wd_let_off_enemy-choice"] = "欲擒故纵：选择对 %dest 执行一种牌的效果",
 }
@@ -467,7 +467,7 @@ extension:addCards{
 Fk:loadTranslationTable{
   ["wd_lure_in_deep"] = "诱敌深入",
   ["wd_lure_in_deep_skill"] = "诱敌深入",
-	[":wd_lure_in_deep"] = "锦囊牌<br/><b>时机</b>：当【杀】对你生效前<br/><b>目标</b>：此【杀】<br/><b>效果</b>：抵消此【杀】对你产生的效果，"..
+  [":wd_lure_in_deep"] = "锦囊牌<br/><b>时机</b>：当【杀】对你生效前<br/><b>目标</b>：此【杀】<br/><b>效果</b>：抵消此【杀】对你产生的效果，"..
   "然后此【杀】使用者需重复对你使用【杀】直到以此法使用的【杀】对你造成伤害，否则你对其造成1点伤害。",
   ["#wd_lure_in_deep-use"] = "%src 对你使用%arg，你可以使用【诱敌深入】",
   ["#wd_lure_in_deep-slash"] = "诱敌深入：请继续对 %src 使用【杀】直到对其造成伤害，否则其对你造成1点伤害",
@@ -476,7 +476,7 @@ Fk:loadTranslationTable{
 --[[Fk:loadTranslationTable{
   ["wd_gold"] = "调兵遣将",
   ["wd_gold_skill"] = "调兵遣将",--♥4，♦4
-	[":wd_gold"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：所有角色<br/><b>效果</b>：亮出牌堆顶的X张牌（X为角色数的一半，向下取整）。"..
+  [":wd_gold"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：所有角色<br/><b>效果</b>：亮出牌堆顶的X张牌（X为角色数的一半，向下取整）。"..
   "目标角色依次可以用一张手牌替换其中一张牌。结算结束时，你将其中任意张牌以任意顺序置于牌堆顶。",
 }]]
 
@@ -553,7 +553,7 @@ extension:addCards({
 Fk:loadTranslationTable{
   ["wd_drowning"] = "水淹七军",
   ["wd_drowning_skill"] = "水淹七军",
-	[":wd_drowning"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：所有其他角色<br/><b>效果</b>：你展示一张手牌，目标角色依次选择一项："..
+  [":wd_drowning"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：所有其他角色<br/><b>效果</b>：你展示一张手牌，目标角色依次选择一项："..
   "1.弃置一张与展示牌类别相同的牌；2.你对其造成1点伤害。",
   ["#wd_drowning-show"] = "请为%arg展示一张手牌",
   ["#wd_drowning-discard"] = "水淹七军：弃置一张%arg，否则受到1点伤害",
@@ -617,7 +617,7 @@ extension:addCards({
 Fk:loadTranslationTable{
   ["wd_save_energy"] = "养精蓄锐",
   ["wd_save_energy_skill"] = "养精蓄锐",
-	[":wd_save_energy"] = "延时锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：将此牌置于目标角色判定区内。"..
+  [":wd_save_energy"] = "延时锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：将此牌置于目标角色判定区内。"..
   "其判定阶段进行判定：若结果不为<font color='red'>♦</font>，其跳过弃牌阶段，将此牌置于其判定区。",
 }
 
