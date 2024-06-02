@@ -697,8 +697,12 @@ local wdSunMoonHalberdSkill = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     TargetGroup:pushTargets(data.targetGroup, self.cost_data)
-    if player:getEquipment(Card.SubtypeWeapon) and Fk:getCardById(player:getEquipment(Card.SubtypeWeapon)).name == "wd_sun_moon_halberd" then
-      room:throwCard({player:getEquipment(Card.SubtypeWeapon)}, self.name, player, player)
+    local toThrow = table.find(
+      player:getEquipments(Card.SubtypeWeapon),
+      function(id) return Fk:getCardById(id).name == "wd_sun_moon_halberd" end
+    )
+    if toThrow then
+      room:throwCard({ toThrow }, self.name, player, player)
     end
   end,
 }
