@@ -539,6 +539,7 @@ Fk:loadTranslationTable{
 local zaozhirenjun = General(extension, "wd__zaozhirenjun", "wei", 3)
 local wd__liangce = fk.CreateViewAsSkill{
   name = "wd__liangce",
+  prompt = "#wd__liangce-prompt",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeBasic
   end,
@@ -556,30 +557,42 @@ local wd__liangce = fk.CreateViewAsSkill{
 local wd__liangce_trigger = fk.CreateTriggerSkill{
   name = "#wd__liangce_trigger",
   anim_type = "drawcard",
-  priority = 10.1, -- 快于五谷！
-  events = {fk.CardUseFinished},
+  events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and data.card.name == "amazing_grace" and data.extra_data and data.extra_data.AGFilled then
-      return #table.filter(data.extra_data.AGFilled, function(id) return player.room:getCardArea(id) == Card.Processing end) > 0
+    if player:hasSkill(self) then
+      local e = player.room.logic:getCurrentEvent().parent
+      if e and e.event == GameEvent.UseCard then
+        local use = e.data[1]
+        if use.card.name == "amazing_grace" then
+          local ids = {}
+          for _, move in ipairs(data) do
+            if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonPutIntoDiscardPile then
+              for _, info in ipairs(move.moveInfo) do
+                if player.room:getCardArea(info.cardId) == Card.DiscardPile then
+                  table.insertIfNeed(ids, info.cardId)
+                end
+              end
+            end
+          end
+          if #ids > 0 then
+            self.cost_data = ids
+            return true
+          end
+        end
+      end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function (p)
-      return p.id end), 1, 1, "#liangce-choose", self.name, true)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#liangce-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {to[1], self.cost_data}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    table.forEach(room.players, function(p) room:closeAG(p) end)
-    local to = room:getPlayerById(self.cost_data)
-    local cards = table.filter(data.extra_data.AGFilled, function(id) return room:getCardArea(id) == Card.Processing end)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(cards)
-    room:obtainCard(to, dummy, true, fk.ReasonJustMove)
-    data.extra_data.AGFilled = nil
+    local to = room:getPlayerById(self.cost_data[1])
+    room:obtainCard(to, self.cost_data[2], true, fk.ReasonJustMove, to.id, self.name)
   end,
 }
 local wd__jianbi = fk.CreateTriggerSkill{
@@ -606,6 +619,7 @@ local wd__juntun = fk.CreateActiveSkill{
   anim_type = "drawcard",
   card_num = 1,
   target_num = 0,
+  prompt = "#wd__juntun-prompt",
   can_use = function(self, player)
     return not player:isNude()
   end,
@@ -622,6 +636,10 @@ zaozhirenjun:addSkill(wd__jianbi)
 zaozhirenjun:addSkill(wd__juntun)
 Fk:loadTranslationTable{
   ["wd__zaozhirenjun"] = "枣祗任峻",
+  ["#wd__zaozhirenjun"] = "丰隆元功",
+  ["designer:wd__zaozhirenjun"] = "乔三暮四",
+  ["illustrator:wd__zaozhirenjun"] = "DH",
+
   ["wd__liangce"] = "粮策",
   [":wd__liangce"] = "①出牌阶段限一次，你可以将一张基本牌当【五谷丰登】使用。<br>②当【五谷丰登】亮出的牌结算完毕置入弃牌堆时，你可以令一名角色获得这些牌。",
   ["wd__jianbi"] = "坚壁",
@@ -629,9 +647,10 @@ Fk:loadTranslationTable{
   ["wd__juntun"] = "军屯",
   [":wd__juntun"] = "出牌阶段，你可以重铸装备牌。",
   ["#wd__liangce_trigger"] = "粮策",
+  ["#wd__liangce-prompt"] = "粮策：你可以将一张基本牌当【五谷丰登】使用",
   ["#liangce-choose"] = "粮策：你可以令一名角色获得【五谷丰登】剩余的亮出牌",
   ["#jianbi-choose"] = "坚壁：你可以令此%arg对至多%arg2个目标无效",
-
+  ["#wd__juntun-prompt"] = "军屯：你可以重铸装备牌",
 }
 
 return extension
