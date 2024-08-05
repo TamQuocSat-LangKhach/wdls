@@ -334,7 +334,7 @@ local sunli = General(extension, "wd__sunli", "wei", 4)
 local wd__bohu = fk.CreateTriggerSkill{
   name = "wd__bohu",
   anim_type = "offensive",
-  events = {fk.EventPhaseStart, fk.PreCardUse},
+  events = {fk.EventPhaseStart, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if event == fk.EventPhaseStart then
@@ -352,8 +352,9 @@ local wd__bohu = fk.CreateTriggerSkill{
         return player.room:askForSkillInvoke(player, self.name)
       else
         local targets = player.room:askForChoosePlayers(player, table.map(table.filter(player.room:getOtherPlayers(player), function(p)
-          return not p:isKongcheng() end), function(p) return p.id end), 1, 2, "#wd__bohu-choose:::"..player:getLostHp(), self.name, true)
+          return not p:isKongcheng() end), Util.IdMapper), 1, 2, "#wd__bohu-choose:::"..player:getLostHp(), self.name, true)
         if #targets > 0 then
+          player.room:sortPlayersByAction(targets)
           self.cost_data = targets
           return true
         end
@@ -368,7 +369,7 @@ local wd__bohu = fk.CreateTriggerSkill{
       if player.phase == Player.Start then
         local choices = {"wd__bohu1", "wd__bohu2"}
         local n = 1
-        if player:usedSkillTimes("wd__fenjie", Player.HistoryGame) > 0 then
+        if player:getMark("wd__bohu_updata") > 0 then
           n = 2
           table.insert(choices, "wd__bohu3")
         end
@@ -383,32 +384,35 @@ local wd__bohu = fk.CreateTriggerSkill{
           if choice == "wd__bohu1" then
             local choices2 = {}
             for j = 0, player.hp, 1 do
-              table.insert(choices2, j)
+              table.insert(choices2, tostring(j))
             end
-            local choice2 = room:askForChoice(player, choices2, self.name, "#wd__bohu1-choice")
-            if choice2 ~= "0" then
-              room:loseHp(player, tonumber(choice2), self.name)
+            if #choices2 > 0 then
+              local choice2 = room:askForChoice(player, choices2, self.name, "#wd__bohu1-choice")
+              if choice2 ~= "0" then
+                room:loseHp(player, tonumber(choice2), self.name)
+                if player.dead then break end
+              end
             end
           end
         end
       else
-        for _, id in ipairs(self.cost_data) do
-          local p = room:getPlayerById(id)
+        local numMap = {}
+        for _, pid in ipairs(self.cost_data) do
+          local p = room:getPlayerById(pid)
           local n = math.min(#p.player_cards[Player.Hand], player:getLostHp())
-          local cards = room:askForCard(p, n, n, false, self.name, false, ".", "#wd__bohu-give::"..player.id..":"..n)
-          local dummy = Fk:cloneCard("dilu")
-          dummy:addSubcards(cards)
-          room:obtainCard(player, dummy, false, fk.ReasonGive)
-          room:setPlayerMark(p, self.name, n)
+          if n > 0 and not player.dead then
+            local cards = room:askForCard(p, n, n, false, self.name, false, ".", "#wd__bohu-give::"..player.id..":"..n)
+            room:obtainCard(player, cards, false, fk.ReasonGive, pid, self.name)
+            numMap[pid] = #cards
+          end
         end
-        for _, id in ipairs(self.cost_data) do
-          local p = room:getPlayerById(id)
-          local n = p:getMark(self.name)
-          room:setPlayerMark(p, self.name, 0)
-          local cards = room:askForCard(player, n, n, true, self.name, false, ".", "#wd__bohu-give::"..p.id..":"..n)
-          local dummy = Fk:cloneCard("dilu")
-          dummy:addSubcards(cards)
-          room:obtainCard(p, dummy, false, fk.ReasonGive)
+        for _, pid in ipairs(self.cost_data) do
+          local p = room:getPlayerById(pid)
+          local n = math.min(numMap[pid] or 0, #player:getCardIds("he"))
+          if n > 0 and not p.dead then
+            local cards = room:askForCard(player, n, n, true, self.name, false, ".", "#wd__bohu-give::"..p.id..":"..n)
+            room:obtainCard(p, cards, false, fk.ReasonGive, player.id, self.name)
+          end
         end
       end
     else
@@ -439,6 +443,7 @@ local wd__fenjie = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:changeMaxHp(player, -1)
+    player.room:setPlayerMark(player, "wd__bohu_updata", 1)
   end,
 }
 wd__bohu:addRelatedSkill(wd__bohu_distance)
@@ -452,7 +457,7 @@ Fk:loadTranslationTable{
   ["wd__fenjie"] = "分界",
   [":wd__fenjie"] = "限定技，回合开始时，你可以减1点体力上限，然后修改〖搏虎〗：<br>"..
   "将“选择一项”改为“选择两项”；<br>增加选项“3.弃牌阶段开始时，你令一至两名其他角色各将X张手牌交给你，然后你分别将等量的牌交给这些角色”。",
-  ["#wd__bohu-choice"] = "搏虎：选择一项本回合获得的效果",
+  ["#wd__bohu-choice"] = "搏虎：选择一项本回合获得的效果（X为你已损失的体力值）",
   ["wd__bohu1"] = "失去任意点体力，你至其他角色距离-X",
   ["wd__bohu2"] = "你使用【杀】伤害基数值改为X",
   ["wd__bohu3"] = "弃牌阶段，令一至两名其他角色各将X张手牌交给你，然后交还等量牌",

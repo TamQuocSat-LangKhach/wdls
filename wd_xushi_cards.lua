@@ -239,9 +239,11 @@ local wdGoldTrigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local use = self.cost_data
+    use.extra_data = use.extra_data or {}
+    use.extra_data.wd_gold_to = data.from.id
     use.tos = {{data.from.id}}
     player.room:useCard(use)
-    return true
+    return use.extra_data.wd_gold_effect
   end,
 }
 local wdGoldSkill = fk.CreateActiveSkill{
@@ -262,6 +264,13 @@ local wdGoldSkill = fk.CreateActiveSkill{
           skillName = self.name,
           proposer = effect.from,
         }
+        local e = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+        if e then
+          local use = e.data[1]
+          if use.extra_data and use.extra_data.wd_gold_to == effect.to then
+            use.extra_data.wd_gold_effect = true
+          end
+        end
       end
     end
   end
