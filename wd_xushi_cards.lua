@@ -5,6 +5,8 @@ Fk:loadTranslationTable{
   ["wd_xushi_cards"] = "玩点-虚实篇",
 }
 
+Fk:addDamageNature(fk.wdPoisonDamage, "wdPoison_damage")
+
 extension:addCards{
   Fk:cloneCard("slash", Card.Spade, 6),
   Fk:cloneCard("slash", Card.Diamond, 9),
@@ -26,7 +28,7 @@ local wdPoisonSlashSkill = fk.CreateActiveSkill{
       to = room:getPlayerById(to),
       card = effect.card,
       damage = 1,
-      damageType = 555,  --"fk.wdPoisonDamage"
+      damageType = fk.wdPoisonDamage,
       skillName = self.name
     })
   end
@@ -39,7 +41,8 @@ local wdPoisonTrigger = fk.CreateTriggerSkill{
   priority = 0, -- game rule
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
-    return target == player and data.damage and data.damage.damageType == 555
+    return target == player and data.damage and data.damage.damageType == fk.wdPoisonDamage and
+      data.damage.card and data.damage.card.name == "wd_poison__slash" and not data.chain
   end,
   on_trigger = function(self, event, target, player, data)
     data.extra_data = data.extra_data or {}
@@ -75,6 +78,7 @@ Fk:loadTranslationTable{
   ["wd_poison__slash"] = "毒杀",
   [":wd_poison__slash"] = "基本牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：攻击范围内的一名角色<br/><b>效果</b>：对目标角色造成1点毒素伤害。"..
   "（一名角色受到毒素伤害而进入的濒死结算中，其不能使用【桃】）。",
+  ["wdPoison_damage"] = "毒素伤害",
 }
 
 extension:addCards{
