@@ -5,6 +5,7 @@ Fk:loadTranslationTable{
   ["wd_xushi_cards"] = "玩点-虚实篇",
 }
 
+fk.wdPoisonDamage = 5
 Fk:addDamageNature(fk.wdPoisonDamage, "wdPoison_damage")
 
 extension:addCards{
