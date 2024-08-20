@@ -5,7 +5,7 @@ Fk:loadTranslationTable{
   ["wd_xushi_cards"] = "玩点-虚实篇",
 }
 
-fk.wdPoisonDamage = 5
+fk.wdPoisonDamage = "wdPoison_damage"
 Fk:addDamageNature(fk.wdPoisonDamage, "wdPoison_damage")
 
 extension:addCards{
@@ -79,7 +79,7 @@ Fk:loadTranslationTable{
   ["wd_poison__slash"] = "毒杀",
   [":wd_poison__slash"] = "基本牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：攻击范围内的一名角色<br/><b>效果</b>：对目标角色造成1点毒素伤害。"..
   "（一名角色受到毒素伤害而进入的濒死结算中，其不能使用【桃】）。",
-  ["wdPoison_damage"] = "毒素伤害",
+  ["wdPoison_damage"] = "毒素",
 }
 
 extension:addCards{
@@ -819,10 +819,19 @@ Fk:loadTranslationTable{
   ["#wd_breastplate_skill-invoke"] = "护心镜：你可以弃置装备区内的【护心镜】，防止你受到的伤害",
 }
 
+local wdBaiHuSkill = fk.CreateDistanceSkill{
+  name = "#wd_baihu_skill",
+  correct_func = function(self, from, to)
+    if to:hasSkill(self) then
+      return 1
+    end
+  end,
+}
 local wdBaiHu = fk.CreateDefensiveRide{
   name = "wd_baihu",
   suit = Card.Diamond,
   number = 5,
+  equip_skill = wdBaiHuSkill,
 }
 extension:addCards({
   wdBaiHu,
@@ -841,6 +850,15 @@ local wdCrossbowTankSkill = fk.CreateTargetModSkill{
     end
   end,
 }
+local wd_crossbow_tank_distance = fk.CreateDistanceSkill{
+  name = "#wd_crossbow_tank_distance",
+  correct_func = function(self, from, to)
+    if from:hasSkill(wdCrossbowTankSkill) then
+      return -1
+    end
+  end,
+}
+wdCrossbowTankSkill:addRelatedSkill(wd_crossbow_tank_distance)
 Fk:addSkill(wdCrossbowTankSkill)
 local wdCrossbowTank = fk.CreateOffensiveRide{
   name = "wd_crossbow_tank",
