@@ -408,7 +408,7 @@ local wd__yijian = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.Death},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, false, true)
+    return target == player and player:hasSkill(self, false, true)
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function (p)

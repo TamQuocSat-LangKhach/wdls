@@ -485,7 +485,7 @@ local wd__fuchou_delay = fk.CreateTriggerSkill{
 local wd__fuchou_distance = fk.CreateDistanceSkill{
   name = "#wd__fuchou_distance",
   fixed_func = function(self, from, to)
-    if table.contains(U.getMark(from, "@@wd__fuchou-turn"), to.id) then
+    if table.contains(from:getTableMark("@@wd__fuchou-turn"), to.id) then
       return 1
     end
   end,
