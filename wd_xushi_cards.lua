@@ -827,6 +827,7 @@ local wdBaiHuSkill = fk.CreateDistanceSkill{
     end
   end,
 }
+Fk:addSkill(wdBaiHuSkill)
 local wdBaiHu = fk.CreateDefensiveRide{
   name = "wd_baihu",
   suit = Card.Diamond,
