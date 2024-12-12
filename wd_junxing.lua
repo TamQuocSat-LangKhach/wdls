@@ -283,7 +283,7 @@ local wd__shehuang = fk.CreateTriggerSkill{
     local room = player.room
     local pindian = player:pindian({target}, self.name)
     if pindian.results[target.id].winner == player then
-      local targets = table.map(room.alive_players, function(p) return p.id end)
+      local targets = table.map(room.alive_players, Util.IdMapper)
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#wd__shehuang-choose::"..target.id, self.name, false)
       if #to > 0 then
         to = room:getPlayerById(to[1])
@@ -303,9 +303,7 @@ local wd__shehuang_trigger = fk.CreateTriggerSkill{
       table.find(player.room.alive_players, function(p)
         return p:getMark("@@wd__shehuang-turn") > 0 and not table.contains(AimGroup:getAllTargets(data.tos), p.id) end)
   end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     for _, p in ipairs(room.alive_players) do

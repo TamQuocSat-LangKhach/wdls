@@ -40,12 +40,7 @@ local wd__moshou = fk.CreateTriggerSkill{
   anim_type = "defensive",
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseSkipping},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
-  on_use = function(self, event, target, player, data)
-    return true
-  end,
+  on_use = Util.TrueFunc,
 }
 feishi:addSkill(wd__shuaiyan)
 feishi:addSkill(wd__moshou)

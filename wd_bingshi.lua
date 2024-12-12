@@ -48,13 +48,11 @@ local wd__chenyong_trigger = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and table.contains(data.card.skillNames, "wd__chenyong")
   end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, TargetGroup:getRealTargets(data.tos))
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p) return not p:isKongcheng() end), function(p) return p.id end)
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p) return not p:isKongcheng() end), Util.IdMapper)
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#wd__chenyong-choose:::"..data.card.name, self.name, true)
     if #to > 0 then
       to = room:getPlayerById(to[1])
@@ -187,7 +185,7 @@ local wd__wanlan = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(table.filter(player.room:getAlivePlayers(), function(p)
-      return player.hp >= p.hp end), function(p) return p.id end), 1, 1, "#wd__wanlan1-choose", self.name, true)
+      return player.hp >= p.hp end), Util.IdMapper), 1, 1, "#wd__wanlan1-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -207,7 +205,7 @@ local wd__wanlan2 = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local targets = table.map(table.filter(player.room:getOtherPlayers(player), function(p)
-      return (player.hp < p.hp and not p:isNude()) end), function(p) return p.id end)
+      return (player.hp < p.hp and not p:isNude()) end), Util.IdMapper)
     if #targets == 0 then return end
     local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#wd__wanlan2-choose", "wd__wanlan", true)
     if #to > 0 then
