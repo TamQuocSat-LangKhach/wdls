@@ -122,9 +122,7 @@ local wdRunTrigger = fk.CreateTriggerSkill{
 }
 local wdRunSkill = fk.CreateActiveSkill{
   name = "wd_run_skill",
-  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return true
-  end,
+  mod_target_filter = Util.TrueFunc,
   can_use = function()
     return false
   end,
@@ -148,6 +146,7 @@ local wdRunSkill = fk.CreateActiveSkill{
 local wd_run = fk.CreateBasicCard{
   name = "wd_run",
   skill = wdRunSkill,
+  is_passive = true,
 }
 Fk:addSkill(wdRunTrigger)
 extension:addCards{
@@ -189,12 +188,8 @@ local wdRiceTrigger = fk.CreateTriggerSkill{
 }
 local wdRiceSkill = fk.CreateActiveSkill{
   name = "wd_rice_skill",
-  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return true
-  end,
-  can_use = function()
-    return false
-  end,
+  mod_target_filter = Util.TrueFunc,
+  can_use = Util.FalseFunc,
   on_use = function(self, room, use)
     if not use.tos or #TargetGroup:getRealTargets(use.tos) == 0 then
       use.tos = { { use.from } }
@@ -211,6 +206,7 @@ local wdRiceSkill = fk.CreateActiveSkill{
 local wd_rice = fk.CreateBasicCard{
   name = "wd_rice",
   skill = wdRiceSkill,
+  is_passive = true,
 }
 Fk:addSkill(wdRiceTrigger)
 extension:addCards{
@@ -283,6 +279,7 @@ local wdGoldSkill = fk.CreateActiveSkill{
 local wd_gold = fk.CreateBasicCard{
   name = "wd_gold",
   skill = wdGoldSkill,
+  is_passive = true,
 }
 Fk:addSkill(wdGoldTrigger)
 extension:addCards{
@@ -310,12 +307,8 @@ extension:addCards{
 local wdStopThirstSkill = fk.CreateActiveSkill{
   name = "wd_stop_thirst_skill",
   target_num = 1,
-  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return true
-  end,
-  target_filter = function(self, to_select)
-    return true
-  end,
+  mod_target_filter = Util.TrueFunc,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
@@ -355,9 +348,7 @@ local wdLetOffEnemySkill = fk.CreateActiveSkill{
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user ~= to_select
   end,
-  target_filter = function(self, to_select)
-    return to_select ~= Self.id
-  end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
@@ -501,6 +492,7 @@ local wdDrowningSkill = fk.CreateActiveSkill{
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user ~= to_select
   end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
@@ -576,15 +568,7 @@ Fk:loadTranslationTable{
 local wdSaveEnergySkill = fk.CreateActiveSkill{
   name = "wd_save_energy_skill",
   target_num = 1,
-  target_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local player = Fk:currentRoom():getPlayerById(to_select)
-      if Self ~= player then
-        return not player:hasDelayedTrick("wd_save_energy")
-      end
-    end
-    return false
-  end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local to = room:getPlayerById(effect.to)
     local judge = {
