@@ -123,9 +123,7 @@ local wdRunTrigger = fk.CreateTriggerSkill{
 local wdRunSkill = fk.CreateActiveSkill{
   name = "wd_run_skill",
   mod_target_filter = Util.TrueFunc,
-  can_use = function()
-    return false
-  end,
+  can_use = Util.FalseFunc,
   on_use = function(self, room, use)
     if not use.tos or #TargetGroup:getRealTargets(use.tos) == 0 then
       use.tos = { { use.from } }
@@ -346,7 +344,7 @@ local wdLetOffEnemySkill = fk.CreateActiveSkill{
   name = "wd_let_off_enemy_skill",
   target_num = 1,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return user ~= to_select
+    return user.id ~= to_select
   end,
   target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
@@ -490,7 +488,7 @@ local wdDrowningSkill = fk.CreateActiveSkill{
   can_use = Util.AoeCanUse,
   on_use = Util.AoeOnUse,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return user ~= to_select
+    return user.id ~= to_select
   end,
   target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
