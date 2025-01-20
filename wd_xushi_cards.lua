@@ -490,7 +490,6 @@ local wdDrowningSkill = fk.CreateActiveSkill{
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user.id ~= to_select
   end,
-  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
