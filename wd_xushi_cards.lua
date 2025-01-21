@@ -305,6 +305,7 @@ extension:addCards{
 local wdStopThirstSkill = fk.CreateActiveSkill{
   name = "wd_stop_thirst_skill",
   target_num = 1,
+  prompt = "#wd_stop_thirst_skill",
   mod_target_filter = Util.TrueFunc,
   target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
@@ -338,11 +339,13 @@ Fk:loadTranslationTable{
   ["wd_stop_thirst_skill"] = "望梅止渴",
   [":wd_stop_thirst"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名角色<br/><b>效果</b>：若目标是手牌最少的角色，其摸两张牌；"..
   "然后若目标是体力值最小的角色，其回复1点体力。",
+  ["#wd_stop_thirst_skill"] = "选择一名角色，若其手牌/体力最少，其回1血/摸2牌",
 }
 
 local wdLetOffEnemySkill = fk.CreateActiveSkill{
   name = "wd_let_off_enemy_skill",
   target_num = 1,
+  prompt = "#wd_let_off_enemy_skill",
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return user.id ~= to_select
   end,
@@ -387,6 +390,7 @@ Fk:loadTranslationTable{
   [":wd_let_off_enemy"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：目标角色摸一张牌，然后你对其执行"..
   "下列一种牌的效果：【过河拆桥】、【决斗】、【火攻】。",
   ["#wd_let_off_enemy-choice"] = "欲擒故纵：选择对 %dest 执行一种牌的效果",
+  ["#wd_let_off_enemy_skill"] = "令其他角色摸一张牌，再选择对其【过河拆桥】、【决斗】或【火攻】",
 }
 
 local wdLureInDeepTrigger = fk.CreateTriggerSkill{
@@ -471,7 +475,7 @@ Fk:loadTranslationTable{
   ["wd_lure_in_deep_skill"] = "诱敌深入",
   [":wd_lure_in_deep"] = "锦囊牌<br/><b>时机</b>：当【杀】对你生效前<br/><b>目标</b>：此【杀】<br/><b>效果</b>：抵消此【杀】对你产生的效果，"..
   "然后此【杀】使用者需重复对你使用【杀】直到以此法使用的【杀】对你造成伤害，否则你对其造成1点伤害。",
-  ["#wd_lure_in_deep-use"] = "%src 对你使用%arg，你可以使用【诱敌深入】",
+  ["#wd_lure_in_deep-use"] = "%src 对你使用%arg，你可以使用【诱敌深入】抵消此【杀】并令其重新杀你",
   ["#wd_lure_in_deep-slash"] = "诱敌深入：请继续对 %src 使用【杀】直到对其造成伤害，否则其对你造成1点伤害",
 }
 
@@ -565,6 +569,9 @@ local wdSaveEnergySkill = fk.CreateActiveSkill{
   name = "wd_save_energy_skill",
   prompt = "#wd_save_energy_skill",
   target_num = 1,
+  mod_target_filter = function (self, to_select, selected, player, card, distance_limited, extra_data)
+    return to_select ~= player.id
+  end,
   target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local to = room:getPlayerById(effect.to)
