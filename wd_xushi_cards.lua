@@ -423,9 +423,7 @@ local wdLureInDeepTrigger = fk.CreateTriggerSkill{
 }
 local wdLureInDeepSkill = fk.CreateActiveSkill{
   name = "wd_lure_in_deep_skill",
-  can_use = function()
-    return false
-  end,
+  can_use = Util.FalseFunc,
   on_effect = function(self, room, effect)
     if effect.responseToEvent then
       effect.responseToEvent.isCancellOut = true
@@ -460,6 +458,7 @@ local wd_lure_in_deep = fk.CreateTrickCard{
   name = "wd_lure_in_deep",
   skill = wdLureInDeepSkill,
   is_damage_card = true,
+  is_passive = true,
 }
 Fk:addSkill(wdLureInDeepTrigger)
 extension:addCards{
@@ -564,6 +563,7 @@ Fk:loadTranslationTable{
 
 local wdSaveEnergySkill = fk.CreateActiveSkill{
   name = "wd_save_energy_skill",
+  prompt = "#wd_save_energy_skill",
   target_num = 1,
   target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
@@ -614,6 +614,7 @@ Fk:loadTranslationTable{
   ["wd_save_energy_skill"] = "养精蓄锐",
   [":wd_save_energy"] = "延时锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：将此牌置于目标角色判定区内。"..
   "其判定阶段进行判定：若结果不为<font color='red'>♦</font>，其跳过弃牌阶段，将此牌置于其判定区。",
+  ["#wd_save_energy_skill"] = "对其他角色使用，若判定结果不为<font color='red'>♦</font>，其跳过弃牌阶段",
 }
 
 local wdSevenStarsSwordSkill = fk.CreateTriggerSkill{
@@ -766,14 +767,19 @@ local wdBreastplateSkill = fk.CreateTriggerSkill{
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and
-      player:getEquipment(Card.SubtypeArmor) ~= nil and Fk:getCardById(player:getEquipment(Card.SubtypeArmor)).name == "wd_breastplate" and
-      not player:prohibitDiscard(Fk:getCardById(player:getEquipment(Card.SubtypeArmor)))
+    table.find(player:getEquipments(Card.SubtypeArmor), function (id)
+      return Fk:getCardById(id).name == "wd_breastplate"
+    end) ~= nil
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#wd_breastplate_skill-invoke")
   end,
   on_use = function(self, event, target, player, data)
-    player.room:throwCard({player:getEquipment(Card.SubtypeArmor)}, self.name, player, player)
+    local card = table.find(player:getEquipments(Card.SubtypeArmor), function (id)
+      return Fk:getCardById(id).name == "wd_breastplate"
+    end)
+    if not card then return end
+    player.room:throwCard(card, self.name, player, player)
     return true
   end,
 }
