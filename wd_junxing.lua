@@ -274,22 +274,21 @@ local wd__shehuang = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target ~= player and target.phase == Player.Play and
-      not player:isKongcheng() and not target:isKongcheng()
+      player:canPindian(target)
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#wd__shehuang-invoke::"..target.id)
+    if player.room:askForSkillInvoke(player, self.name, data, "#wd__shehuang-invoke::"..target.id) then
+      self.cost_data = {tos = {target.id}}
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local pindian = player:pindian({target}, self.name)
-    if pindian.results[target.id].winner == player then
+    if pindian.results[target.id].winner == player and not target.dead then
       local targets = table.map(room.alive_players, Util.IdMapper)
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#wd__shehuang-choose::"..target.id, self.name, false)
-      if #to > 0 then
-        to = room:getPlayerById(to[1])
-      else
-        to = room:getPlayerById(table.random(targets))
-      end
+      to = room:getPlayerById(to[1])
       room:setPlayerMark(to, "@@wd__shehuang-turn", 1)
     end
   end
@@ -299,7 +298,8 @@ local wd__shehuang_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player.phase ~= Player.NotActive and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
+    return target == player and player.phase ~= Player.NotActive
+    and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
       table.find(player.room.alive_players, function(p)
         return p:getMark("@@wd__shehuang-turn") > 0 and not table.contains(AimGroup:getAllTargets(data.tos), p.id) end)
   end,
@@ -310,7 +310,7 @@ local wd__shehuang_trigger = fk.CreateTriggerSkill{
       if p:getMark("@@wd__shehuang-turn") > 0 and not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
         not player:isProhibited(p, data.card) then
         if p == player then
-          if data.card.skill:targetFilter(player.id, {}, {}, data.card) then
+          if data.card.skill:targetFilter(player.id, {}, {}, data.card, nil, player) then
             TargetGroup:pushTargets(data.targetGroup, p.id)
           end
         else
